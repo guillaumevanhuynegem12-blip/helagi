@@ -1,0 +1,33 @@
+{
+  "name": "helagi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Helagi — a public-facing medical AI chat that triages symptoms with Claude, grounded in the WHO ICD-11 classification.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.110.0",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.0",
+    "next": "^16.2.10",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-markdown": "^10.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.0",
+    "@types/react": "19.2.17",
+    "autoprefixer": "^10.5.2",
+    "postcss": "^8.5.16",
+    "tailwindcss": "^3.4.17",
+    "typescript": "6.0.3"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "^8.5.16"
+    }
+  }
+}

@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: #f6f1e7;
+  color: #23332b;
+  -webkit-font-smoothing: antialiased;
+  background-image: radial-gradient(
+      circle at 18% 12%,
+      rgba(78, 158, 114, 0.08),
+      transparent 45%
+    ),
+    radial-gradient(circle at 88% 88%, rgba(217, 142, 90, 0.06), transparent 45%);
+}
+
+/* Typography for the legal pages (app/legal/*) — plain articles, no MDX. */
+.legal-prose h1 {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 1.75rem;
+  color: #143b2c;
+  margin-bottom: 0.25rem;
+}
+.legal-prose .updated {
+  font-size: 0.8rem;
+  color: rgba(35, 51, 43, 0.5);
+  margin-bottom: 1.5rem;
+}
+.legal-prose h2 {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 1.15rem;
+  color: #143b2c;
+  margin: 1.75rem 0 0.5rem;
+}
+.legal-prose p,
+.legal-prose li {
+  font-size: 0.925rem;
+  line-height: 1.65;
+  color: rgba(35, 51, 43, 0.85);
+  margin-bottom: 0.6rem;
+}
+.legal-prose ul {
+  list-style: disc;
+  padding-left: 1.4rem;
+  margin-bottom: 0.75rem;
+}
+.legal-prose a {
+  color: #1f5c45;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.legal-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin: 0.75rem 0 1rem;
+}
+.legal-prose th,
+.legal-prose td {
+  border: 1px solid rgba(31, 92, 69, 0.15);
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+  color: rgba(35, 51, 43, 0.85);
+}
+.legal-prose th {
+  background: rgba(239, 232, 217, 0.6);
+  color: #143b2c;
+}
+
+/* Slim, unobtrusive scrollbar for scrollable areas */
+.scroll-area {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(31, 92, 69, 0.25) transparent;
+}
+.scroll-area::-webkit-scrollbar {
+  width: 8px;
+}
+.scroll-area::-webkit-scrollbar-thumb {
+  background-color: rgba(31, 92, 69, 0.25);
+  border-radius: 9999px;
+}
