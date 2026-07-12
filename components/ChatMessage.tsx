@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { Message } from "@/lib/types";
 import { parseTriageQuestions } from "@/lib/parseQuestions";
 import TypingIndicator from "./TypingIndicator";
@@ -42,6 +43,20 @@ const markdownComponents = {
       className="rounded bg-cream-muted px-1 py-0.5 font-mono text-[13px]"
       {...props}
     />
+  ),
+  table: (props: React.ComponentProps<"table">) => (
+    <div className="mb-2 overflow-x-auto last:mb-0">
+      <table className="w-full border-collapse text-[14px]" {...props} />
+    </div>
+  ),
+  th: (props: React.ComponentProps<"th">) => (
+    <th
+      className="border-b border-forest/20 bg-cream-muted px-3 py-1.5 text-left font-semibold text-forest-deep"
+      {...props}
+    />
+  ),
+  td: (props: React.ComponentProps<"td">) => (
+    <td className="border-b border-forest/10 px-3 py-1.5 align-top" {...props} />
   ),
   hr: () => <hr className="my-3 border-forest/10" />,
   blockquote: (props: React.ComponentProps<"blockquote">) => (
@@ -112,7 +127,7 @@ export default function ChatMessage({
         ) : triage ? (
           <>
             {triage.stripped && (
-              <ReactMarkdown components={markdownComponents}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                 {triage.stripped}
               </ReactMarkdown>
             )}
@@ -124,7 +139,7 @@ export default function ChatMessage({
           </>
         ) : (
           <>
-            <ReactMarkdown components={markdownComponents}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
               {message.content}
             </ReactMarkdown>
             {showThinkingTrailer && (
