@@ -4,11 +4,9 @@
 // enters the chat. Used on the landing page and the auth pages.
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { track } from "@/lib/analytics";
 
 export default function GuestButton({ className }: { className?: string }) {
-  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +21,9 @@ export default function GuestButton({ className }: { className?: string }) {
         throw new Error(data?.error ?? "Could not start a guest session.");
       }
       track("guest_session_started");
-      router.push("/chat");
+      // Full navigation for the same reason as AuthForm: a cached logged-out
+      // render of /chat would bounce straight back to "/".
+      window.location.href = "/chat";
     } catch (err) {
       setError(
         err instanceof Error && err.message

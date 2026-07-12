@@ -6,7 +6,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   validateEmail,
   validatePassword,
@@ -18,7 +17,6 @@ const inputClasses =
   "w-full rounded-xl border border-forest/20 bg-white px-3.5 py-2.5 text-[15px] text-ink outline-none transition placeholder:text-ink/35 focus:border-forest/50 aria-[invalid=true]:border-clay";
 
 export default function AuthForm({ mode }: { mode: "login" | "register" }) {
-  const router = useRouter();
   const isRegister = mode === "register";
 
   const [email, setEmail] = useState("");
@@ -70,7 +68,10 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
         return;
       }
       track(isRegister ? "registration" : "login");
-      router.push("/chat");
+      // Full navigation, not a client route change: the router may still hold
+      // a cached logged-out render of /chat that would bounce back to "/".
+      // A real page load guarantees the server sees the fresh session cookie.
+      window.location.href = "/chat";
     } catch {
       setServerError(
         "Could not reach the server. Please check your connection and try again.",
