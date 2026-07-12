@@ -6,8 +6,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getIdentity } from "@/lib/auth";
+import { isGoogleConfigured } from "@/lib/googleAuth";
 import { HelagiLockup } from "@/components/Logo";
 import AuthForm from "@/components/AuthForm";
+import GoogleButton from "@/components/GoogleButton";
 import GuestButton from "@/components/GuestButton";
 
 export const metadata: Metadata = {
@@ -37,6 +39,16 @@ export default async function RegisterPage() {
           medical details.
         </p>
         <AuthForm mode="register" />
+        {isGoogleConfigured() && (
+          <>
+            <div className="my-5 flex items-center gap-3 text-xs text-ink/45">
+              <span className="h-px flex-1 bg-forest/10" />
+              or
+              <span className="h-px flex-1 bg-forest/10" />
+            </div>
+            <GoogleButton />
+          </>
+        )}
       </div>
 
       <div className="mt-4 w-full max-w-sm text-center">

@@ -30,7 +30,7 @@ Upstash Redis, so the env vars below are still all you need.
 | `/login`, `/register` | Auth pages (client + server validation, clear errors) |
 | `/legal/*` | Privacy Policy, Cookie Policy, Terms of Use, Medical Disclaimer — **placeholders needing legal review** |
 | `/api/chat`, `/api/summary` | The AI server routes (unchanged) |
-| `/api/auth/*` | `register`, `login`, `logout`, `guest` |
+| `/api/auth/*` | `register`, `login`, `logout`, `guest`, `google` (+ `google/callback`) |
 | `/api/analytics` | First-party, consent-gated event sink |
 
 ## How the chat works
@@ -60,6 +60,14 @@ deploy like that).
   Passwords are hashed with Node's built-in scrypt (per-user salt,
   constant-time compare); only the hash is stored. Every user gets a
   permanent `u_…` ID.
+- **Sign in with Google** (optional): a dependency-free OAuth 2.0
+  authorization-code flow in [lib/googleAuth.ts](lib/googleAuth.ts) +
+  `app/api/auth/google/*`. Only the verified email is requested (`openid
+  email` scopes); the account it creates is password-less and uses the same
+  session system. The button appears once `GOOGLE_CLIENT_ID` /
+  `GOOGLE_CLIENT_SECRET` are set (see [.env.example](.env.example)). Signing
+  in with Google on an email that already has a password account simply logs
+  into that same account.
 - **Sessions** are 32-byte random tokens stored server-side with a sliding
   30-day TTL (persistent login). The browser holds only the opaque token in
   an httpOnly cookie — no secrets ever reach client JS.

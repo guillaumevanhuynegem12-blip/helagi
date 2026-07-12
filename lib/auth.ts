@@ -35,7 +35,12 @@ const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days, slid on activity
 export interface User {
   id: string;
   email: string;
-  passwordHash: string;
+  // Absent for accounts created via "Sign in with Google" — those have no
+  // password, so password login is rejected for them.
+  passwordHash?: string;
+  // Google's stable account ID ("sub" claim), set once the user has signed in
+  // with Google at least once.
+  googleId?: string;
   createdAt: string;
 }
 
@@ -177,13 +182,48 @@ export async function verifyCredentials(
   password: string,
 ): Promise<User | null> {
   const user = await storeGet<User>(userKey(email));
-  if (!user) {
-    // Burn roughly the same time as a real check so response timing doesn't
-    // reveal whether the email exists.
+  if (!user || !user.passwordHash) {
+    // No account, or a Google-only account without a password. Burn roughly
+    // the same time as a real check so response timing doesn't reveal which.
     await hashPassword(password);
     return null;
   }
   return (await verifyPassword(password, user.passwordHash)) ? user : null;
+}
+
+// "Sign in with Google": returns the existing account for this (verified)
+// email, or creates a password-less one. An existing email+password account is
+// simply reused — Google verified that the visitor owns the address, so this
+// links the two login methods to one account.
+export async function findOrCreateGoogleUser(
+  email: string,
+  googleId: string,
+): Promise<User> {
+  const normalized = email.trim().toLowerCase();
+  const existing = await storeGet<User>(userKey(normalized));
+  if (existing) {
+    if (existing.googleId !== googleId) {
+      const linked = { ...existing, googleId };
+      await storeSet(userKey(normalized), linked);
+      return linked;
+    }
+    return existing;
+  }
+  const user: User = {
+    id: `u_${randomBytes(12).toString("hex")}`,
+    email: normalized,
+    googleId,
+    createdAt: new Date().toISOString(),
+  };
+  const created = await storeSet(userKey(normalized), user, {
+    ifNotExists: true, // accounts are permanent — no TTL
+  });
+  if (!created) {
+    // Lost a race against a simultaneous registration — use that account.
+    const raced = await storeGet<User>(userKey(normalized));
+    if (raced) return raced;
+  }
+  return user;
 }
 
 // ── Sessions & identity ──────────────────────────────────────────────────────
