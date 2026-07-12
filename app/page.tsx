@@ -34,7 +34,7 @@ const TRUST_POINTS = [
   },
   {
     title: "Private by design",
-    text: "Your conversations are not stored on our servers — they live only in your browser while you chat.",
+    text: "As a guest, your conversations never touch our servers. With an account, your chats are saved privately for you alone, so you can pick up where you left off.",
   },
   {
     title: "Honest about limits",

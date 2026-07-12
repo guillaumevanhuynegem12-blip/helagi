@@ -46,18 +46,24 @@ export default function PrivacyPolicyPage() {
 
       <h2>Your conversations</h2>
       <p>
-        Chat conversations are kept in your browser while you use Helagi and
-        are <strong>not stored on our servers</strong>. To generate an answer,
-        your conversation is transmitted to our AI provider (Anthropic) and,
-        for medical terminology lookups, search terms may be sent to the World
-        Health Organization&rsquo;s ICD-11 API. [CONFIRM PROVIDER DATA-PROCESSING
-        TERMS AND RETENTION WITH LEGAL.]
+        <strong>As a guest,</strong> chat conversations are kept only in your
+        browser while you use Helagi and are{" "}
+        <strong>not stored on our servers</strong> — they are gone when you
+        leave.
       </p>
       <p>
-        If Helagi ever introduces server-side storage or analysis of medical
-        conversations, it will be handled separately and securely, and only
-        after clear information and appropriate consent — it is not covered by
-        normal analytics consent.
+        <strong>With an account,</strong> your conversations are stored on our
+        servers and linked to your account, so your history is available when
+        you come back. They are accessible only through your own login, are
+        never used for analytics, and are never shared. [FILL IN: retention
+        period and deletion process — e.g. chats are erased when the account
+        is deleted.]
+      </p>
+      <p>
+        To generate an answer, your conversation is transmitted to our AI
+        provider (Anthropic) and, for medical terminology lookups, search
+        terms may be sent to the World Health Organization&rsquo;s ICD-11 API.
+        [CONFIRM PROVIDER DATA-PROCESSING TERMS AND RETENTION WITH LEGAL.]
       </p>
 
       <h2>Legal basis &amp; retention</h2>

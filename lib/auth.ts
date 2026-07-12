@@ -79,7 +79,9 @@ function warnMemory() {
   );
 }
 
-async function storeGet<T>(key: string): Promise<T | null> {
+// Exported for reuse by other server-side stores (lib/chatStore.ts) so the
+// Redis/in-memory fallback logic lives in one place.
+export async function storeGet<T>(key: string): Promise<T | null> {
   if (redis) return (await redis.get<T>(key)) ?? null;
   warnMemory();
   const entry = memory.get(key);
@@ -92,7 +94,7 @@ async function storeGet<T>(key: string): Promise<T | null> {
 }
 
 // Returns false when ifNotExists is set and the key already existed.
-async function storeSet(
+export async function storeSet(
   key: string,
   value: unknown,
   opts?: { ttlSeconds?: number; ifNotExists?: boolean },

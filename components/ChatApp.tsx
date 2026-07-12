@@ -5,8 +5,13 @@
 // only additions are the identity/logout wiring for the sidebar and a few
 // consent-gated analytics beacons (event names only, never message content).
 //
-// State is React-only (no database) — chats exist for the lifetime of the
-// browser tab and the full history is re-sent to /api/chat on every turn.
+// Chat history:
+// - Logged-in accounts: conversations are loaded from and saved to the
+//   account's private server-side history (/api/chats) — they follow the
+//   account, and each account only ever sees its own chats.
+// - Guests: React state only. Chats exist for the lifetime of the browser tab
+//   and are gone the moment the guest leaves — nothing touches the server.
+// Either way the full history is re-sent to /api/chat on every turn.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Conversation, Message } from "@/lib/types";
@@ -42,9 +47,59 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
   // without being pulled back down; scrolling near the bottom re-sticks it.
   const stickToBottomRef = useRef(true);
 
+  const isAccount = identity.type === "user";
+  // Saving is blocked until the server history has been fetched, so an empty
+  // just-mounted state can never overwrite an account's real history.
+  const [historyLoaded, setHistoryLoaded] = useState(!isAccount);
+  const saveTimerRef = useRef<number | null>(null);
+
   useEffect(() => {
     track("chat_opened");
   }, []);
+
+  // Accounts: fetch the private server-side history once on mount.
+  useEffect(() => {
+    if (!isAccount) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/chats");
+        const data = res.ok ? await res.json().catch(() => null) : null;
+        if (!cancelled && Array.isArray(data?.conversations)) {
+          setConversations(data.conversations);
+        }
+      } catch {
+        // Offline or server hiccup — start empty; saving stays enabled so the
+        // session still gets stored once the connection is back.
+      } finally {
+        if (!cancelled) setHistoryLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAccount]);
+
+  // Accounts: autosave (debounced) whenever the conversations change — but
+  // not mid-stream; the save fires once the reply has finished.
+  useEffect(() => {
+    if (!isAccount || !historyLoaded || isStreaming) return;
+    if (saveTimerRef.current !== null) window.clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = window.setTimeout(() => {
+      void fetch("/api/chats", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversations }),
+      }).catch(() => {
+        // Best effort — the next change retries.
+      });
+    }, 800);
+    return () => {
+      if (saveTimerRef.current !== null) {
+        window.clearTimeout(saveTimerRef.current);
+      }
+    };
+  }, [conversations, isAccount, historyLoaded, isStreaming]);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;

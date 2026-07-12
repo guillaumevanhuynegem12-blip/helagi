@@ -31,13 +31,18 @@ Upstash Redis, so the env vars below are still all you need.
 | `/legal/*` | Privacy Policy, Cookie Policy, Terms of Use, Medical Disclaimer — **placeholders needing legal review** |
 | `/api/chat`, `/api/summary` | The AI server routes (unchanged) |
 | `/api/auth/*` | `register`, `login`, `logout`, `guest`, `google` (+ `google/callback`) |
+| `/api/chats` | Per-account chat history (GET/PUT, accounts only — guests are never stored) |
 | `/api/analytics` | First-party, consent-gated event sink |
 
 ## How the chat works
 
-1. The browser keeps the conversation in React state (no database) and POSTs
-   the full history to `/api/chat`, which streams back plain text
+1. The browser keeps the conversation in React state and POSTs the full
+   history to `/api/chat`, which streams back plain text
    ([components/ChatApp.tsx](components/ChatApp.tsx) → [lib/streamChat.ts](lib/streamChat.ts)).
+   Logged-in accounts additionally sync their conversations to a private
+   per-account server-side history (`/api/chats` → [lib/chatStore.ts](lib/chatStore.ts),
+   keyed by the session's user ID, size-capped and re-validated server-side);
+   guest chats never touch the server and vanish when the tab closes.
 2. The server route ([app/api/chat/route.ts](app/api/chat/route.ts)) rate
    limits, validates, then runs an agentic loop against Claude: stream text,
    execute any `search_icd` tool calls against the WHO API
