@@ -107,7 +107,7 @@ export default function CookieBanner() {
           aria-label="Cookie consent"
           className="fixed inset-x-0 bottom-0 z-40 p-3 sm:p-4"
         >
-          <div className="mx-auto max-w-3xl rounded-2xl border border-forest/15 bg-white p-4 shadow-lg">
+          <div className="mx-auto max-w-3xl animate-fade-up rounded-2xl border border-forest/15 bg-white p-4 shadow-lift sm:p-5">
             <p className="text-sm leading-6 text-ink">
               <span className="font-semibold text-forest-deep">Cookies at Helagi.</span>{" "}
               We use strictly necessary cookies to make login and security work.
@@ -123,21 +123,21 @@ export default function CookieBanner() {
               <button
                 type="button"
                 onClick={() => decide(true, true)}
-                className="rounded-xl bg-forest px-4 py-2 text-sm font-medium text-cream transition hover:bg-forest-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+                className="btn btn-primary btn-sm"
               >
                 Accept all
               </button>
               <button
                 type="button"
                 onClick={() => decide(false, false)}
-                className="rounded-xl border border-forest/25 bg-white px-4 py-2 text-sm font-medium text-forest transition hover:bg-cream-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+                className="btn btn-secondary btn-sm"
               >
                 Reject optional cookies
               </button>
               <button
                 type="button"
                 onClick={() => setShowModal(true)}
-                className="rounded-xl px-3 py-2 text-sm font-medium text-forest underline underline-offset-2 transition hover:text-forest-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+                className="btn btn-ghost btn-sm underline underline-offset-2"
               >
                 Manage preferences
               </button>
@@ -158,7 +158,7 @@ export default function CookieBanner() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="cookie-settings-title"
-            className="relative w-full max-w-lg rounded-2xl border border-forest/15 bg-white p-5 shadow-xl"
+            className="relative w-full max-w-lg animate-fade-up rounded-2xl border border-forest/15 bg-white p-5 shadow-lift sm:p-6"
           >
             <h2
               id="cookie-settings-title"
@@ -218,14 +218,14 @@ export default function CookieBanner() {
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="rounded-xl px-4 py-2 text-sm font-medium text-ink/60 transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+                className="btn btn-ghost btn-sm text-ink/60 hover:text-ink"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={() => decide(analytics, preferences)}
-                className="rounded-xl bg-forest px-4 py-2 text-sm font-medium text-cream transition hover:bg-forest-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+                className="btn btn-primary btn-sm"
               >
                 Save preferences
               </button>

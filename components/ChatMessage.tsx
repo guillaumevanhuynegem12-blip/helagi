@@ -5,6 +5,7 @@ import type { Message } from "@/lib/types";
 import { parseTriageQuestions } from "@/lib/parseQuestions";
 import TypingIndicator from "./TypingIndicator";
 import QuestionCard from "./QuestionCard";
+import { HelagiMark } from "./Logo";
 
 // Styled markdown for assistant answers (triage headings, bold options, lists).
 const markdownComponents = {
@@ -112,7 +113,7 @@ export default function ChatMessage({
   if (isUser) {
     return (
       <div className="flex animate-fade-in justify-end">
-        <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl bg-forest px-4 py-2.5 text-cream">
+        <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-forest px-4 py-2.5 leading-7 text-cream">
           {message.content}
         </div>
       </div>
@@ -120,8 +121,9 @@ export default function ChatMessage({
   }
 
   return (
-    <div className="flex animate-fade-in justify-start">
-      <div className="w-full max-w-[85%] break-words rounded-2xl bg-white px-4 py-3 text-ink ring-1 ring-forest/10">
+    <div className="flex animate-fade-in items-start justify-start gap-2.5">
+      <HelagiMark className="mt-1.5 hidden h-6 w-6 shrink-0 sm:block" />
+      <div className="w-full max-w-[85%] break-words rounded-2xl rounded-tl-md bg-white px-4 py-3 leading-7 text-ink shadow-soft ring-1 ring-forest/10">
         {showTyping ? (
           <TypingIndicator />
         ) : triage ? (

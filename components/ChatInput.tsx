@@ -37,10 +37,17 @@ export default function ChatInput({
     }
   }
 
+  const remaining = MAX_INPUT_CHARS - value.length;
+  const nearLimit = remaining <= 200;
+
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-4">
-      <div className="flex items-end gap-2 rounded-2xl border border-forest/20 bg-white p-2 shadow-sm transition focus-within:border-forest/40">
+      <div className="flex items-end gap-2 rounded-[1.6rem] border border-forest/15 bg-white p-2 shadow-lift transition focus-within:border-forest/40 focus-within:ring-2 focus-within:ring-forest/15">
+        <label htmlFor="chat-input" className="sr-only">
+          Describe your symptoms or ask a health question
+        </label>
         <textarea
+          id="chat-input"
           ref={textareaRef}
           rows={1}
           autoFocus
@@ -49,14 +56,22 @@ export default function ChatInput({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Describe your symptoms or ask a health question…"
-          className="max-h-[200px] flex-1 resize-none bg-transparent px-2 py-1.5 text-[15px] leading-6 text-ink outline-none placeholder:text-ink/40"
+          className="max-h-[200px] flex-1 resize-none bg-transparent px-3 py-2 text-[15px] leading-6 text-ink outline-none placeholder:text-ink/40"
         />
+        {nearLimit && (
+          <span
+            className={`pb-2.5 text-xs tabular-nums ${remaining <= 40 ? "text-clay" : "text-ink/40"}`}
+            aria-live="polite"
+          >
+            {remaining}
+          </span>
+        )}
         <button
           type="button"
           onClick={onSend}
           disabled={!canSend}
           aria-label="Send message"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-forest text-cream transition enabled:hover:bg-forest-deep disabled:cursor-not-allowed disabled:opacity-30"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-forest text-cream transition enabled:hover:bg-forest-deep enabled:hover:shadow-glow enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
         >
           <svg
             width="18"
@@ -67,13 +82,16 @@ export default function ChatInput({
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            aria-hidden="true"
           >
             <path d="M12 19V5" />
             <path d="m5 12 7-7 7 7" />
           </svg>
         </button>
       </div>
-      <p className="mt-2 text-center text-xs text-ink/40">{DISCLAIMER}</p>
+      <p className="mt-2 text-center text-xs leading-5 text-ink/40">
+        {DISCLAIMER}
+      </p>
     </div>
   );
 }

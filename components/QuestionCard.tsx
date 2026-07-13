@@ -69,10 +69,11 @@ export default function QuestionCard({
                     type="button"
                     disabled={locked}
                     onClick={() => pick(q.number, opt)}
-                    className={`rounded-full border px-3.5 py-1.5 text-sm transition ${
+                    aria-pressed={selected}
+                    className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest ${
                       selected
-                        ? "border-forest bg-forest text-cream"
-                        : "border-forest/25 bg-white text-forest enabled:hover:bg-cream-muted"
+                        ? "border-forest bg-forest text-cream shadow-sm"
+                        : "border-forest/25 bg-white text-forest enabled:hover:border-forest/45 enabled:hover:bg-cream-muted"
                     } disabled:opacity-60`}
                   >
                     {opt}
@@ -92,7 +93,8 @@ export default function QuestionCard({
               value={answers[q.number] ?? ""}
               onChange={(e) => pick(q.number, e.target.value)}
               placeholder="Type a short answer (optional)"
-              className="w-full max-w-sm rounded-xl border border-forest/20 bg-white px-3 py-1.5 text-sm text-ink outline-none placeholder:text-ink/35 focus:border-forest/40 disabled:opacity-60"
+              aria-label={`Answer to question ${q.number}`}
+              className="input-field max-w-sm px-3 py-1.5 text-sm"
             />
           </div>
         ),
@@ -112,7 +114,8 @@ export default function QuestionCard({
               maxLength={1000}
               onChange={(e) => setExtra(e.target.value)}
               placeholder="e.g. it hurts more at night, I take blood thinners…"
-              className="w-full resize-none rounded-xl border border-forest/20 bg-white px-3 py-2 text-sm text-ink outline-none placeholder:text-ink/35 focus:border-forest/40 disabled:opacity-60"
+              aria-label="Anything else you want to add (optional)"
+              className="input-field resize-none px-3 py-2 text-sm"
             />
           </div>
 
@@ -121,7 +124,7 @@ export default function QuestionCard({
               type="button"
               disabled={locked || !allChosen}
               onClick={submit}
-              className="rounded-xl bg-forest px-4 py-2 text-sm font-medium text-cream transition enabled:hover:bg-forest-deep disabled:cursor-not-allowed disabled:opacity-40"
+              className="btn btn-primary btn-sm"
             >
               Send my answers
             </button>

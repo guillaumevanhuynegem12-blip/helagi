@@ -6,7 +6,14 @@
 import { useState } from "react";
 import { track } from "@/lib/analytics";
 
-export default function GuestButton({ className }: { className?: string }) {
+export default function GuestButton({
+  className,
+  variant = "light",
+}: {
+  className?: string;
+  /** "light" for cream/white pages, "onDark" for the forest CTA panel */
+  variant?: "light" | "onDark";
+}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,12 +47,19 @@ export default function GuestButton({ className }: { className?: string }) {
         type="button"
         onClick={startAsGuest}
         disabled={busy}
-        className="w-full rounded-xl border border-forest/25 bg-white px-4 py-2.5 text-sm font-medium text-forest transition enabled:hover:bg-cream-muted disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+        className={
+          variant === "onDark"
+            ? "btn btn-lg w-full border border-cream/30 text-cream hover:bg-white/10 focus-visible:outline-cream"
+            : "btn btn-secondary btn-md w-full"
+        }
       >
         {busy ? "Starting…" : "Continue as guest"}
       </button>
       {error && (
-        <p role="alert" className="mt-2 text-xs text-clay">
+        <p
+          role="alert"
+          className={`mt-2 text-xs ${variant === "onDark" ? "text-cream/80" : "text-clay"}`}
+        >
           {error}
         </p>
       )}

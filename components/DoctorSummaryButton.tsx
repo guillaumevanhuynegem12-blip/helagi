@@ -75,7 +75,7 @@ export default function DoctorSummaryButton({
       onClick={generate}
       disabled={disabled || busy}
       title="Create a printable summary of this chat to bring to your doctor"
-      className="flex items-center gap-1.5 rounded-full border border-forest/25 bg-white px-3.5 py-1.5 text-sm font-medium text-forest shadow-sm transition enabled:hover:bg-cream-muted disabled:cursor-not-allowed disabled:opacity-50"
+      className="btn btn-secondary gap-1.5 px-3.5 py-1.5 text-sm"
     >
       <svg
         width="15"

@@ -62,7 +62,7 @@ export default function Sidebar({
           <button
             type="button"
             onClick={onNewChat}
-            className="flex w-full items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm font-medium text-cream transition hover:bg-white/10"
+            className="flex w-full items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-4 py-2.5 text-sm font-semibold text-cream transition hover:border-white/25 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage"
           >
             <svg
               width="16"
@@ -87,7 +87,7 @@ export default function Sidebar({
             Your conversations
           </p>
           {conversations.length === 0 ? (
-            <p className="px-3 py-2 text-sm leading-5 text-cream/40">
+            <p className="px-3 py-2 text-sm leading-6 text-cream/40">
               Nothing here yet — your chats will show up here.
             </p>
           ) : (
@@ -97,10 +97,11 @@ export default function Sidebar({
                   <button
                     type="button"
                     onClick={() => onSelect(c.id)}
-                    className={`w-full truncate rounded-lg px-3 py-2 text-left text-sm transition ${
+                    aria-current={c.id === activeId ? "true" : undefined}
+                    className={`w-full truncate rounded-xl px-3 py-2 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage ${
                       c.id === activeId
-                        ? "bg-forest text-cream"
-                        : "text-cream/70 hover:bg-white/10"
+                        ? "bg-forest font-medium text-cream shadow-soft"
+                        : "text-cream/70 hover:bg-white/10 hover:text-cream"
                     }`}
                     title={c.title}
                   >
@@ -114,8 +115,8 @@ export default function Sidebar({
 
         {/* Account */}
         <div className="border-t border-white/10 p-3">
-          <div className="flex items-center gap-3 rounded-lg px-2 py-2">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-clay text-sm font-semibold text-white">
+          <div className="flex items-center gap-3 rounded-xl bg-white/[0.05] px-2.5 py-2.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-clay text-sm font-semibold text-white">
               {initial}
             </div>
             <div className="min-w-0">
@@ -126,14 +127,16 @@ export default function Sidebar({
                 {displayName}
               </p>
               <p className="text-xs leading-4 text-cream/50">
-                Chats are private and aren&rsquo;t saved after you leave.
+                {identity.type === "user"
+                  ? "Chats are saved privately to your account."
+                  : "Guest — chats aren't saved after you leave."}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onLogout}
-            className="mt-1 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-medium text-cream/60 transition hover:bg-white/10 hover:text-cream"
+            className="mt-1.5 flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-xs font-medium text-cream/60 transition hover:bg-white/10 hover:text-cream focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage"
           >
             <svg
               width="14"

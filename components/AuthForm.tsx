@@ -13,8 +13,7 @@ import {
 } from "@/lib/validation";
 import { track } from "@/lib/analytics";
 
-const inputClasses =
-  "w-full rounded-xl border border-forest/20 bg-white px-3.5 py-2.5 text-[15px] text-ink outline-none transition placeholder:text-ink/35 focus:border-forest/50 aria-[invalid=true]:border-clay";
+const inputClasses = "input-field";
 
 export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const isRegister = mode === "register";
@@ -174,7 +173,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
       <button
         type="submit"
         disabled={busy}
-        className="mt-1 rounded-xl bg-forest px-4 py-2.5 text-sm font-semibold text-cream transition enabled:hover:bg-forest-deep disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+        className="btn btn-primary btn-md mt-1 w-full"
       >
         {busy
           ? isRegister

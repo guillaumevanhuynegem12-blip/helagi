@@ -1,8 +1,8 @@
 import { EXAMPLE_PROMPTS } from "@/lib/constants";
 import { HelagiMark } from "./Logo";
 
-// Plain-language "how it works" shown to first-time visitors so they instantly
-// understand what Helagi is and what will happen when they type.
+// Welcome screen for a new conversation: what Helagi is, how it works, and
+// example prompts the visitor can tap to prefill the composer.
 const STEPS = [
   {
     step: "1",
@@ -27,24 +27,23 @@ export default function EmptyState({
   onSelectPrompt: (prompt: string) => void;
 }) {
   return (
-    <div className="flex min-h-full flex-col items-center justify-center px-4 py-8 text-center">
-      <HelagiMark className="mb-4 h-14 w-14" />
-      <h1 className="font-display text-3xl font-medium tracking-tight text-forest-deep sm:text-4xl">
-        Not feeling well? Let&rsquo;s figure it out.
-      </h1>
-      <p className="mt-3 max-w-xl text-[15px] leading-6 text-ink/60">
-        Helagi is a free health assistant. Describe your symptoms and it will
-        help you understand what might be going on — and what to do next.
-      </p>
+    <div className="flex min-h-full flex-col items-center justify-center px-4 py-10 text-center">
+      <div className="animate-fade-up">
+        <HelagiMark className="mx-auto mb-5 h-16 w-16" />
+        <h1 className="font-display text-3xl font-medium tracking-tight text-forest-deep sm:text-4xl">
+          Not feeling well? Let&rsquo;s figure it out.
+        </h1>
+        <p className="mx-auto mt-3 max-w-xl text-[15px] leading-7 text-ink/60">
+          Describe your symptoms below and Helagi will help you understand what
+          might be going on — and what to do next.
+        </p>
+      </div>
 
       {/* How it works */}
-      <div className="mt-8 grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="mt-10 grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
         {STEPS.map(({ step, title, text }) => (
-          <div
-            key={step}
-            className="rounded-2xl border border-forest/10 bg-white/70 px-4 py-4 text-left"
-          >
-            <div className="mb-2 flex h-7 w-7 items-center justify-center rounded-full bg-forest text-sm font-semibold text-cream">
+          <div key={step} className="card px-4 py-4 text-left">
+            <div className="mb-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-forest text-sm font-semibold text-cream">
               {step}
             </div>
             <p className="text-sm font-semibold text-forest-deep">{title}</p>
@@ -54,7 +53,7 @@ export default function EmptyState({
       </div>
 
       {/* Example prompts */}
-      <p className="mt-8 text-sm font-medium text-ink/70">
+      <p className="mt-10 text-sm font-medium text-ink/70">
         Not sure how to start? Tap one of these:
       </p>
       <div className="mt-3 grid w-full max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
@@ -63,7 +62,7 @@ export default function EmptyState({
             key={prompt}
             type="button"
             onClick={() => onSelectPrompt(prompt)}
-            className="rounded-2xl border border-forest/10 bg-white px-4 py-3 text-left text-sm text-ink/80 transition hover:border-forest/25 hover:bg-cream-muted"
+            className="rounded-2xl border border-forest/15 bg-white px-4 py-3 text-left text-sm leading-6 text-ink/80 shadow-soft transition duration-200 hover:-translate-y-0.5 hover:border-forest/30 hover:shadow-lift focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
           >
             &ldquo;{prompt}&rdquo;
           </button>
@@ -71,12 +70,28 @@ export default function EmptyState({
       </div>
 
       {/* Emergency note */}
-      <p className="mt-8 max-w-md text-xs leading-5 text-ink/50">
-        <span className="font-semibold text-clay">In an emergency?</span>{" "}
-        For severe chest pain, trouble breathing, or heavy bleeding, call your
-        local emergency number (like 112 or 911) right away — don&rsquo;t wait
-        for a chat.
-      </p>
+      <div className="mt-10 flex max-w-md items-start gap-2.5 rounded-2xl border border-clay/30 bg-clay/[0.06] px-4 py-3 text-left">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          className="mt-0.5 h-4 w-4 shrink-0 text-clay"
+        >
+          <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+          <path d="M12 9v4" />
+          <path d="M12 17h.01" />
+        </svg>
+        <p className="text-xs leading-5 text-ink/60">
+          <span className="font-semibold text-clay">In an emergency?</span> For
+          severe chest pain, trouble breathing, or heavy bleeding, call your
+          local emergency number (like 112 or 911) right away — don&rsquo;t
+          wait for a chat.
+        </p>
+      </div>
     </div>
   );
 }

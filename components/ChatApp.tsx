@@ -266,12 +266,12 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
 
       <main className="relative flex min-w-0 flex-1 flex-col">
         {/* Mobile top bar */}
-        <header className="flex items-center gap-2 border-b border-forest/10 px-3 py-2 md:hidden">
+        <header className="flex items-center gap-2 border-b border-forest/10 bg-cream px-3 py-2 md:hidden">
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
             aria-label="Open menu"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-forest hover:bg-cream-muted"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-forest transition hover:bg-forest/[0.07] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
           >
             <svg
               width="20"
@@ -296,11 +296,17 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
           )}
         </header>
 
-        {/* Desktop: floating doctor-summary button */}
+        {/* Desktop top bar: conversation title + doctor summary */}
         {!isEmpty && (
-          <div className="absolute right-4 top-4 z-10 hidden md:block">
+          <header className="hidden items-center justify-between gap-4 border-b border-forest/10 bg-cream px-6 py-3 md:flex">
+            <h1
+              className="truncate text-sm font-medium text-ink/70"
+              title={activeConversation?.title}
+            >
+              {activeConversation?.title ?? "Conversation"}
+            </h1>
             <DoctorSummaryButton messages={messages} disabled={isStreaming} />
-          </div>
+          </header>
         )}
 
         {isEmpty ? (

@@ -27,10 +27,7 @@ function GoogleG({ className }: { className?: string }) {
 
 export default function GoogleButton() {
   return (
-    <a
-      href="/api/auth/google"
-      className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-forest/25 bg-white px-4 py-2.5 text-sm font-medium text-forest transition hover:bg-cream-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
-    >
+    <a href="/api/auth/google" className="btn btn-secondary btn-md w-full">
       <GoogleG className="h-[18px] w-[18px]" />
       Continue with Google
     </a>

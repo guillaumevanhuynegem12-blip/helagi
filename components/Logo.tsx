@@ -73,10 +73,9 @@ export function HelagiLockup({
 }) {
   const markSize = size === "lg" ? "h-10 w-10" : "h-7 w-7";
   const textSize = size === "lg" ? "text-[30px]" : "text-xl";
-  const gap = size === "lg" ? "gap-2" : "gap-2";
 
   return (
-    <div className={`flex items-end ${gap} ${className ?? ""}`}>
+    <div className={`flex items-end gap-2 ${className ?? ""}`}>
       <HelagiMark className={`${markSize} shrink-0`} reversed={reversed} crop />
       <span
         className={`font-display ${textSize} lowercase leading-[0.8] tracking-tight ${

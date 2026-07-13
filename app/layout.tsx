@@ -4,7 +4,7 @@
 // Also mounts the two global client helpers: the cookie-consent banner and
 // the consent-gated analytics listener.
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Hanken_Grotesk } from "next/font/google";
 import CookieBanner from "@/components/CookieBanner";
 import AnalyticsListener from "@/components/AnalyticsListener";
@@ -28,6 +28,11 @@ export const metadata: Metadata = {
   title: "Helagi — understand your symptoms",
   description:
     "Describe your symptoms in your own words. Helagi asks a few simple questions and gives clear health information, plus a summary you can print for your doctor.",
+};
+
+// Tints the browser chrome (mobile address bar) to match the cream canvas.
+export const viewport: Viewport = {
+  themeColor: "#F6F1E7",
 };
 
 export default function RootLayout({
