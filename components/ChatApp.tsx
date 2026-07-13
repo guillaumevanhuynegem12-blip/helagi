@@ -288,7 +288,13 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
               <path d="M4 18h16" />
             </svg>
           </button>
-          <HelagiLockup />
+          <a
+            href="/"
+            aria-label="Back to the Helagi homepage"
+            className="rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+          >
+            <HelagiLockup />
+          </a>
           {!isEmpty && (
             <div className="ml-auto">
               <DoctorSummaryButton messages={messages} disabled={isStreaming} />

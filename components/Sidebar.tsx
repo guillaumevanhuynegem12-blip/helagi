@@ -52,9 +52,16 @@ export default function Sidebar({
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Brand */}
+        {/* Brand — links back to the homepage (session stays, so the visitor
+            remains logged in and can return via "Open Helagi") */}
         <div className="px-4 py-4">
-          <HelagiLockup reversed size="lg" />
+          <a
+            href="/"
+            aria-label="Back to the Helagi homepage"
+            className="inline-block rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sage"
+          >
+            <HelagiLockup reversed size="lg" />
+          </a>
         </div>
 
         {/* New chat */}
