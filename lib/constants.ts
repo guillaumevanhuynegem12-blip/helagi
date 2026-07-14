@@ -11,3 +11,9 @@ export const EXAMPLE_PROMPTS = [
 
 export const DISCLAIMER =
   "Helagi gives general health information, not medical advice. For a diagnosis or treatment, please see a doctor.";
+
+// Invisible marker the model appends when a reply fully wraps up the
+// conversation (see <session_end_signal> in lib/systemPrompt.ts). The UI
+// strips it from display/storage and uses it to time the "Have you finished
+// this session?" prompt.
+export const SESSION_END_MARKER = "[[SESSION_MAYBE_OVER]]";

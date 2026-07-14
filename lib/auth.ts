@@ -16,12 +16,24 @@
 //   readable by client-side JavaScript.
 // - Guests get a random anonymous ID in an httpOnly cookie — enough to
 //   associate activity with one session without an account.
+// - Registration is a two-step flow: the account is only created after the
+//   visitor proves they own the email by entering a 6-digit code we sent to
+//   it. Until then only a short-lived "pending signup" record exists.
+// - Password resets use single-use 32-byte tokens emailed as a link. Only a
+//   SHA-256 hash of the token is stored, so a leaked store can't reset
+//   passwords.
 //
 // NOTE: cookie WRITES (createSession, destroySession, ensureGuestSession) are
 // only legal inside Route Handlers / Server Actions. getIdentity() is
 // read-only and safe to call from Server Components too.
 
-import { randomBytes, scrypt as scryptCb, timingSafeEqual } from "crypto";
+import {
+  createHash,
+  randomBytes,
+  randomInt,
+  scrypt as scryptCb,
+  timingSafeEqual,
+} from "crypto";
 import { promisify } from "util";
 import { cookies } from "next/headers";
 import { Redis } from "@upstash/redis";
@@ -120,7 +132,8 @@ export async function storeSet(
   return true;
 }
 
-async function storeDelete(key: string): Promise<void> {
+// Exported for lib/chatStore.ts (chat-history deletion), like storeGet/storeSet.
+export async function storeDelete(key: string): Promise<void> {
   if (redis) {
     await redis.del(key);
     return;
@@ -160,23 +173,199 @@ async function verifyPassword(
 
 const userKey = (email: string) => `user:email:${email.trim().toLowerCase()}`;
 
-// Creates the account, or reports that the email is taken. The SET NX write is
-// atomic, so two simultaneous registrations can't both win.
-export async function registerUser(
+const sha256 = (value: string) =>
+  createHash("sha256").update(value).digest("hex");
+
+// ── Registration with email verification ────────────────────────────────────
+//
+// Step 1 (beginSignup): store a pending record with the hashed password and a
+// hashed 6-digit code — no account yet, so a typo'd or abandoned signup never
+// squats an email address. Step 2 (confirmSignup): the right code creates the
+// real account. The pending record expires after 15 minutes and allows 5
+// wrong guesses in total (a fresh code from resendSignupCode does NOT reset
+// the guess budget, so the code can't be brute-forced via resends).
+
+interface PendingSignup {
+  email: string;
+  passwordHash: string;
+  codeHash: string;
+  attemptsLeft: number;
+  createdAt: string; // anchors the original expiry when the record is rewritten
+}
+
+const signupKey = (email: string) =>
+  `signup:email:${email.trim().toLowerCase()}`;
+const SIGNUP_TTL_SECONDS = 15 * 60;
+const SIGNUP_MAX_ATTEMPTS = 5;
+const SIGNUP_EXPIRED_ERROR =
+  "This verification code has expired. Please start over to get a new one.";
+
+// crypto.randomInt is uniform, so every 6-digit code is equally likely.
+const generateSignupCode = () =>
+  randomInt(0, 1_000_000).toString().padStart(6, "0");
+
+function pendingTtlRemaining(pending: PendingSignup): number {
+  const elapsed = Math.floor((Date.now() - Date.parse(pending.createdAt)) / 1000);
+  return SIGNUP_TTL_SECONDS - elapsed;
+}
+
+// Starts (or restarts — latest attempt wins) a signup. Returns the plain code
+// so the caller can email it; only its hash is stored.
+export async function beginSignup(
   email: string,
   password: string,
-): Promise<{ user: User } | { error: string }> {
-  const user: User = {
-    id: `u_${randomBytes(12).toString("hex")}`, // permanent user ID
-    email: email.trim().toLowerCase(),
+): Promise<{ code: string } | { error: string }> {
+  const normalized = email.trim().toLowerCase();
+  const existing = await storeGet<User>(userKey(normalized));
+  if (existing) return { error: "An account with this email already exists." };
+
+  const code = generateSignupCode();
+  const pending: PendingSignup = {
+    email: normalized,
     passwordHash: await hashPassword(password),
+    codeHash: sha256(code),
+    attemptsLeft: SIGNUP_MAX_ATTEMPTS,
     createdAt: new Date().toISOString(),
   };
+  await storeSet(signupKey(normalized), pending, {
+    ttlSeconds: SIGNUP_TTL_SECONDS,
+  });
+  return { code };
+}
+
+// Issues a fresh code for an in-progress signup (old code stops working).
+// The 15-minute window restarts — but attemptsLeft is carried over.
+export async function resendSignupCode(
+  email: string,
+): Promise<{ code: string } | { error: string }> {
+  const key = signupKey(email);
+  const pending = await storeGet<PendingSignup>(key);
+  if (!pending) return { error: SIGNUP_EXPIRED_ERROR };
+
+  const code = generateSignupCode();
+  await storeSet(
+    key,
+    { ...pending, codeHash: sha256(code), createdAt: new Date().toISOString() },
+    { ttlSeconds: SIGNUP_TTL_SECONDS },
+  );
+  return { code };
+}
+
+// Checks the code and, when right, creates the account. `expired: true` tells
+// the UI the whole signup must be restarted (record gone, guesses used up, or
+// the email got registered some other way in the meantime).
+export async function confirmSignup(
+  email: string,
+  code: string,
+): Promise<{ user: User } | { error: string; expired?: boolean }> {
+  const key = signupKey(email);
+  const pending = await storeGet<PendingSignup>(key);
+  if (!pending) return { error: SIGNUP_EXPIRED_ERROR, expired: true };
+
+  // The in-memory fallback honors TTLs, but recompute anyway so a rewritten
+  // record can never outlive its original window by much.
+  const remaining = pendingTtlRemaining(pending);
+  if (remaining <= 0) {
+    await storeDelete(key);
+    return { error: SIGNUP_EXPIRED_ERROR, expired: true };
+  }
+
+  const expected = Buffer.from(pending.codeHash, "hex");
+  const actual = Buffer.from(sha256(code), "hex");
+  if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) {
+    const attemptsLeft = pending.attemptsLeft - 1;
+    if (attemptsLeft <= 0) {
+      await storeDelete(key);
+      return {
+        error: "Too many incorrect codes. Please start over.",
+        expired: true,
+      };
+    }
+    await storeSet(key, { ...pending, attemptsLeft }, { ttlSeconds: remaining });
+    return {
+      error: `That code isn't right — please check the email and try again. ${attemptsLeft} ${attemptsLeft === 1 ? "attempt" : "attempts"} left.`,
+    };
+  }
+
+  const user: User = {
+    id: `u_${randomBytes(12).toString("hex")}`, // permanent user ID
+    email: pending.email,
+    passwordHash: pending.passwordHash,
+    createdAt: new Date().toISOString(),
+  };
+  // SET NX is atomic, so a simultaneous signup (e.g. via Google) can't be
+  // overwritten.
   const created = await storeSet(userKey(user.email), user, {
     ifNotExists: true, // accounts are permanent — no TTL
   });
-  if (!created) return { error: "An account with this email already exists." };
+  await storeDelete(key);
+  if (!created) {
+    return {
+      error: "An account with this email already exists. Try logging in.",
+      expired: true,
+    };
+  }
   return { user };
+}
+
+// ── Password reset ───────────────────────────────────────────────────────────
+//
+// A reset token proves email ownership, so it also works for Google-only
+// accounts — completing a reset simply gives such an account a password
+// (linking both login methods, like findOrCreateGoogleUser does in reverse).
+
+interface PasswordReset {
+  email: string;
+  createdAt: string;
+}
+
+const resetKey = (tokenHash: string) => `pwreset:${tokenHash}`;
+const RESET_TTL_SECONDS = 30 * 60;
+const RESET_INVALID_ERROR =
+  "This password reset link is invalid or has expired. Please request a new one.";
+
+// Returns the plain token for the email link, or null when no account exists
+// for this address. IMPORTANT: callers must respond identically in both cases
+// so the endpoint can't be used to probe which emails have accounts.
+export async function createPasswordReset(
+  email: string,
+): Promise<string | null> {
+  const normalized = email.trim().toLowerCase();
+  const user = await storeGet<User>(userKey(normalized));
+  if (!user) return null;
+
+  const token = randomBytes(32).toString("hex");
+  const record: PasswordReset = {
+    email: normalized,
+    createdAt: new Date().toISOString(),
+  };
+  await storeSet(resetKey(sha256(token)), record, {
+    ttlSeconds: RESET_TTL_SECONDS,
+  });
+  return token;
+}
+
+// Consumes the token (single-use, valid or not) and sets the new password.
+export async function resetPassword(
+  token: string,
+  password: string,
+): Promise<{ user: User } | { error: string }> {
+  if (!/^[0-9a-f]{64}$/.test(token)) return { error: RESET_INVALID_ERROR };
+
+  const key = resetKey(sha256(token));
+  const record = await storeGet<PasswordReset>(key);
+  if (!record) return { error: RESET_INVALID_ERROR };
+  await storeDelete(key);
+
+  const user = await storeGet<User>(userKey(record.email));
+  if (!user) return { error: RESET_INVALID_ERROR };
+
+  const updated: User = {
+    ...user,
+    passwordHash: await hashPassword(password),
+  };
+  await storeSet(userKey(record.email), updated);
+  return { user: updated };
 }
 
 export async function verifyCredentials(
@@ -226,6 +415,16 @@ export async function findOrCreateGoogleUser(
     if (raced) return raced;
   }
   return user;
+}
+
+// ── Account deletion ─────────────────────────────────────────────────────────
+
+// Removes the user record itself. Chats are deleted separately by the caller
+// (lib/chatStore.ts). Sessions need no cleanup: getIdentity() re-checks that
+// the user record still exists, so every session of a deleted account — on
+// any device — dies on its next request.
+export async function deleteUserAccount(email: string): Promise<void> {
+  await storeDelete(userKey(email));
 }
 
 // ── Sessions & identity ──────────────────────────────────────────────────────
@@ -293,8 +492,15 @@ export async function getIdentity(): Promise<Identity | null> {
   if (token && /^[0-9a-f]{64}$/.test(token)) {
     const session = await storeGet<SessionData>(sessionKey(token));
     if (session) {
-      await storeExpire(sessionKey(token), SESSION_TTL_SECONDS);
-      return { type: "user", id: session.userId, email: session.email };
+      // The user record must still exist: this is what makes "delete my
+      // account" total — sessions on other devices stop working immediately
+      // instead of lingering until their TTL.
+      const user = await storeGet<User>(userKey(session.email));
+      if (user) {
+        await storeExpire(sessionKey(token), SESSION_TTL_SECONDS);
+        return { type: "user", id: session.userId, email: session.email };
+      }
+      await storeDelete(sessionKey(token)); // orphaned session — remove it
     }
   }
 

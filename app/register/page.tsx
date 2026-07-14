@@ -39,7 +39,8 @@ export default async function RegisterPage() {
           </h1>
           <p className="mb-6 mt-1.5 text-sm leading-6 text-ink/60">
             Free, and all we need is an email and a password — no personal or
-            medical details.
+            medical details. We&rsquo;ll email you a 6-digit code to confirm
+            the address is yours.
           </p>
           <AuthForm mode="register" />
           {isGoogleConfigured() && (

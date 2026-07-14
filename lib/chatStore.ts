@@ -13,7 +13,7 @@
 // the payload is attacker-controllable (it's an authenticated POST body).
 
 import type { Conversation, Message, Role } from "@/lib/types";
-import { storeGet, storeSet } from "@/lib/auth";
+import { storeGet, storeSet, storeDelete } from "@/lib/auth";
 
 const chatsKey = (userId: string) => `chats:${userId}`;
 
@@ -59,6 +59,8 @@ function sanitizeConversation(raw: unknown): Conversation | null {
     id: c.id.slice(0, 64),
     title: c.title.slice(0, MAX_TITLE_CHARS),
     messages,
+    // Only the literal true survives sanitization — anything else is dropped.
+    ...(c.surveyDone === true ? { surveyDone: true } : {}),
   };
 }
 
@@ -91,4 +93,10 @@ export async function saveChats(
   conversations: Conversation[],
 ): Promise<void> {
   await storeSet(chatsKey(userId), conversations);
+}
+
+// Removes the account's entire chat history (account deletion in
+// /api/account; "delete all chats" goes through saveChats with [] instead).
+export async function deleteChats(userId: string): Promise<void> {
+  await storeDelete(chatsKey(userId));
 }

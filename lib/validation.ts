@@ -9,8 +9,8 @@ export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 200;
 export const EMAIL_MAX_LENGTH = 254;
 
-// Pragmatic email shape check (proper validation happens implicitly by the
-// user being able to type it — we never send verification emails today).
+// Pragmatic email shape check. Real ownership is proven by the 6-digit
+// verification code we email at signup (see lib/auth.ts beginSignup).
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 // Both validators return a user-facing error message, or null when valid.

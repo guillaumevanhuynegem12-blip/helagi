@@ -120,7 +120,11 @@ const icons = {
 
 /* --- Page content ---------------------------------------------------------- */
 
-const HERO_POINTS = ["Free to use", "Private by design", "There day and night"];
+const HERO_POINTS = [
+  "Free during the prototype phase",
+  "Private by design",
+  "There day and night",
+];
 
 const STEPS = [
   {
@@ -244,7 +248,7 @@ export default async function LandingPage() {
             aria-label="Sections"
           >
             {[
-              ["Why Helagi", "#why"],
+              ["Why we exist", "#why"],
               ["How it works", "#how-it-works"],
               ["What you get", "#what-you-get"],
             ].map(([label, href]) => (
@@ -340,24 +344,24 @@ export default async function LandingPage() {
           </div>
         </div>
 
-        {/* WHY — the belief Helagi is built on */}
+        {/* WHY — Helagi's belief and ambition (the Golden Circle: start with why) */}
         <section id="why" className="shell scroll-mt-24 pb-16 lg:pb-24">
           <Reveal className="mx-auto max-w-2xl text-center">
-            <p className="eyebrow">Why Helagi exists</p>
+            <p className="eyebrow">Why we exist</p>
             <h2 className="mt-3 font-display text-3xl font-medium tracking-tight text-forest-deep sm:text-4xl">
-              Health worries deserve calm, not chaos
+              We believe everyone deserves to understand their own health
             </h2>
             <p className="mt-6 text-[16px] leading-8 text-ink/70">
-              Search your symptoms online and within three clicks you&rsquo;re
-              reading about the rarest, scariest possibility. Meanwhile the
-              questions that actually matter — is this urgent? can it wait?
-              what should I watch for? — go unanswered.
+              That belief is where Helagi begins. Today, understanding what is
+              happening in your own body is harder than it should be — clear
+              answers hide behind medical jargon, waiting rooms, and
+              frightening search results, and worry fills the gap.
             </p>
             <p className="mt-4 text-[16px] leading-8 text-ink/70">
-              We believe understanding your own health shouldn&rsquo;t require
-              a medical degree. That&rsquo;s why Helagi exists: a calm, honest
-              first step for everyone — free, private, and there the moment
-              worry strikes.
+              Our ambition is to close that gap: calm, honest health
+              understanding for everyone, everywhere, at any hour. Every
+              question Helagi asks and every answer it gives exists in service
+              of that goal — the product is simply how we pursue it.
             </p>
           </Reveal>
         </section>
@@ -556,6 +560,33 @@ export default async function LandingPage() {
           </Reveal>
         </section>
 
+        {/* Early access — honest pricing note: free now, likely paid after the
+            real launch. Phrased around feedback/surveys, NOT conversation
+            data: guest chats never touch our servers and account chats stay
+            private, and this section must not suggest otherwise. */}
+        <section id="early-access" className="shell scroll-mt-24 pb-16 lg:pb-24">
+          <Reveal>
+            <div className="mx-auto max-w-2xl rounded-3xl border border-forest/15 bg-white/70 px-6 py-10 text-center sm:px-10">
+              <p className="eyebrow">Early access</p>
+              <h2 className="mt-3 font-display text-2xl font-medium tracking-tight text-forest-deep sm:text-3xl">
+                Free for now — not forever
+              </h2>
+              <p className="mt-4 text-[15px] leading-7 text-ink/70">
+                Helagi is a prototype, and while it grows everything is free.
+                All we ask in return is your honest feedback — the short
+                surveys after a session tell us where Helagi truly helps and
+                where it must get better.
+              </p>
+              <p className="mt-3 text-[15px] leading-7 text-ink/70">
+                Once that work is done and Helagi launches for real, it will
+                most likely become a paid service. So this is the best moment
+                to use it: it costs nothing, and what you tell us shapes what
+                Helagi becomes.
+              </p>
+            </div>
+          </Reveal>
+        </section>
+
         {/* Final CTA */}
         <section id="get-started" className="shell scroll-mt-24 pb-20 lg:pb-28">
           <Reveal>
@@ -605,8 +636,8 @@ export default async function LandingPage() {
                 </div>
                 {!signedIn && (
                   <p className="mt-5 text-[13px] text-cream/55">
-                    Free — all we ask for is an email and a password. No
-                    personal or medical details.
+                    Free during the prototype phase — all we ask for is an
+                    email and a password. No personal or medical details.
                   </p>
                 )}
               </div>

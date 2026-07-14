@@ -3,6 +3,10 @@
 // Shared login/register form. Validates client-side for instant feedback
 // (the API routes re-validate everything), shows clear field-level and
 // server errors, and enters the chat on success.
+//
+// Registration is a two-step flow: credentials first, then a "verify" step
+// where the visitor enters the 6-digit code we emailed them. The account only
+// exists once the code checks out (see /api/auth/verify-email).
 
 import { useState } from "react";
 import Link from "next/link";
@@ -28,6 +32,14 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   }>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Verification step (register only).
+  const [step, setStep] = useState<"credentials" | "verify">("credentials");
+  const [code, setCode] = useState("");
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [codeNotice, setCodeNotice] = useState<string | null>(null);
+  const [expired, setExpired] = useState(false);
+  const [resending, setResending] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -66,7 +78,13 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
         setBusy(false);
         return;
       }
-      track(isRegister ? "registration" : "login");
+      if (isRegister) {
+        // Account not created yet — the code we just emailed does that.
+        setBusy(false);
+        setStep("verify");
+        return;
+      }
+      track("login");
       // Full navigation, not a client route change: the router may still hold
       // a cached logged-out render of /chat that would bounce back to "/".
       // A real page load guarantees the server sees the fresh session cookie.
@@ -77,6 +95,171 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
       );
       setBusy(false);
     }
+  }
+
+  async function submitCode(e: React.FormEvent) {
+    e.preventDefault();
+    if (busy) return;
+    setCodeError(null);
+    setCodeNotice(null);
+
+    if (!/^\d{6}$/.test(code.trim())) {
+      setCodeError("Please enter the 6-digit code from the email.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const res = await fetch("/api/auth/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), code: code.trim() }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        if (data?.expired) setExpired(true);
+        setCodeError(data?.error ?? "Something went wrong. Please try again.");
+        setBusy(false);
+        return;
+      }
+      track("registration");
+      // Full page load for the same cookie-freshness reason as login above.
+      window.location.href = "/chat";
+    } catch {
+      setCodeError(
+        "Could not reach the server. Please check your connection and try again.",
+      );
+      setBusy(false);
+    }
+  }
+
+  async function resendCode() {
+    if (resending || busy) return;
+    setResending(true);
+    setCodeError(null);
+    setCodeNotice(null);
+    try {
+      const res = await fetch("/api/auth/resend-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        if (data?.expired) setExpired(true);
+        setCodeError(data?.error ?? "Something went wrong. Please try again.");
+      } else {
+        setCodeNotice("We've emailed you a new code.");
+      }
+    } catch {
+      setCodeError(
+        "Could not reach the server. Please check your connection and try again.",
+      );
+    }
+    setResending(false);
+  }
+
+  // Back to step 1 — used both by "use a different email" and after the
+  // pending signup expires.
+  function startOver() {
+    setStep("credentials");
+    setCode("");
+    setCodeError(null);
+    setCodeNotice(null);
+    setExpired(false);
+  }
+
+  if (isRegister && step === "verify") {
+    return (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm leading-6 text-ink/70">
+          We&rsquo;ve emailed a 6-digit code to{" "}
+          <span className="font-medium text-forest-deep">{email.trim()}</span>.
+          Enter it below to confirm this is you.
+        </p>
+
+        {codeError && (
+          <p
+            role="alert"
+            className="rounded-xl border border-clay/40 bg-clay/10 px-3.5 py-2.5 text-sm text-ink"
+          >
+            {codeError}
+          </p>
+        )}
+        {codeNotice && (
+          <p
+            role="status"
+            className="rounded-xl border border-leaf/40 bg-leaf/10 px-3.5 py-2.5 text-sm text-ink"
+          >
+            {codeNotice}
+          </p>
+        )}
+
+        {expired ? (
+          <button
+            type="button"
+            onClick={startOver}
+            className="btn btn-primary btn-md w-full"
+          >
+            Start over
+          </button>
+        ) : (
+          <form onSubmit={submitCode} noValidate className="flex flex-col gap-4">
+            <div>
+              <label
+                htmlFor="code"
+                className="mb-1.5 block text-sm font-medium text-forest-deep"
+              >
+                Verification code
+              </label>
+              <input
+                id="code"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                autoFocus
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                placeholder="123456"
+                aria-invalid={!!codeError}
+                aria-describedby={codeError ? "code-error" : undefined}
+                className={`${inputClasses} text-center text-lg tracking-[0.4em]`}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={busy}
+              className="btn btn-primary btn-md mt-1 w-full"
+            >
+              {busy ? "Checking the code…" : "Confirm my email"}
+            </button>
+
+            <p className="text-center text-sm text-ink/60">
+              Nothing arrived? Check your spam folder, or{" "}
+              <button
+                type="button"
+                onClick={resendCode}
+                disabled={resending}
+                className="font-medium text-forest underline underline-offset-2 disabled:opacity-50"
+              >
+                {resending ? "sending…" : "send a new code"}
+              </button>
+              .
+            </p>
+            <p className="text-center text-sm">
+              <button
+                type="button"
+                onClick={startOver}
+                className="text-ink/50 underline underline-offset-2"
+              >
+                Use a different email
+              </button>
+            </p>
+          </form>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -117,12 +300,22 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
       </div>
 
       <div>
-        <label
-          htmlFor="password"
-          className="mb-1.5 block text-sm font-medium text-forest-deep"
-        >
-          Password
-        </label>
+        <div className="mb-1.5 flex items-baseline justify-between">
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-forest-deep"
+          >
+            Password
+          </label>
+          {!isRegister && (
+            <Link
+              href="/forgot-password"
+              className="text-xs font-medium text-forest underline underline-offset-2"
+            >
+              Forgot password?
+            </Link>
+          )}
+        </div>
         <input
           id="password"
           type="password"
@@ -177,7 +370,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
       >
         {busy
           ? isRegister
-            ? "Creating your account…"
+            ? "Sending your code…"
             : "Signing you in…"
           : isRegister
             ? "Create account"

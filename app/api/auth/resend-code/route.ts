@@ -1,12 +1,12 @@
-import { beginSignup } from "@/lib/auth";
+import { resendSignupCode } from "@/lib/auth";
 import { sendEmail, verificationCodeEmail } from "@/lib/email";
-import { validateEmail, validatePassword } from "@/lib/validation";
+import { validateEmail } from "@/lib/validation";
 import { checkAuthRateLimit, getClientIp } from "@/lib/rateLimit";
 import { isSameOrigin } from "@/lib/security";
 
-// Step 1 of registration: validate email + password, then email a 6-digit
-// verification code. No account (and no session) exists until the visitor
-// confirms the code at /api/auth/verify-email.
+// Emails a fresh verification code for an in-progress signup (the previous
+// code stops working). Only meaningful while the pending-signup record from
+// /api/auth/register still exists — afterwards the visitor must start over.
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,28 +30,23 @@ export async function POST(req: Request) {
     );
   }
 
-  let email: unknown, password: unknown;
+  let email: unknown;
   try {
-    const body = await req.json();
-    email = body?.email;
-    password = body?.password;
+    email = (await req.json())?.email;
   } catch {
     return Response.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  // Same checks the form runs client-side — repeated here because the client
-  // can't be trusted.
   const emailError = validateEmail(email);
   if (emailError) return Response.json({ error: emailError }, { status: 400 });
-  const passwordError = validatePassword(password);
-  if (passwordError) {
-    return Response.json({ error: passwordError }, { status: 400 });
-  }
 
   try {
-    const result = await beginSignup(email as string, password as string);
+    const result = await resendSignupCode(email as string);
     if ("error" in result) {
-      return Response.json({ error: result.error }, { status: 409 });
+      return Response.json(
+        { error: result.error, expired: true },
+        { status: 400 },
+      );
     }
     const sent = await sendEmail(
       (email as string).trim().toLowerCase(),
@@ -63,12 +58,11 @@ export async function POST(req: Request) {
         { status: 500 },
       );
     }
-    // The form now switches to its "enter the code" step.
-    return Response.json({ ok: true, verify: true });
+    return Response.json({ ok: true });
   } catch (err) {
-    console.error("[auth/register] failed:", err);
+    console.error("[auth/resend-code] failed:", err);
     return Response.json(
-      { error: "Something went wrong creating your account. Please try again." },
+      { error: "Something went wrong sending a new code. Please try again." },
       { status: 500 },
     );
   }

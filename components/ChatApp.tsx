@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Conversation, Message } from "@/lib/types";
+import { SESSION_END_MARKER } from "@/lib/constants";
 import { streamChat } from "@/lib/streamChat";
 import { track } from "@/lib/analytics";
 import ChatMessage from "@/components/ChatMessage";
@@ -22,16 +23,24 @@ import ChatInput from "@/components/ChatInput";
 import EmptyState from "@/components/EmptyState";
 import Sidebar, { type SidebarIdentity } from "@/components/Sidebar";
 import DoctorSummaryButton from "@/components/DoctorSummaryButton";
+import SurveyModal, { type SurveyReason } from "@/components/SurveyModal";
 import { HelagiLockup } from "@/components/Logo";
 
 function makeId() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
+// Instant placeholder title (first words of the first message). Replaced by a
+// short AI-generated title once the first reply has finished — unless the
+// user renamed the chat in the meantime.
 function titleFrom(text: string) {
   const clean = text.trim().replace(/\s+/g, " ");
   return clean.length > 40 ? clean.slice(0, 40) + "…" : clean;
 }
+
+// Titles may be renamed by hand; keep them within what the server-side
+// history store accepts (chatStore MAX_TITLE_CHARS).
+const MAX_TITLE_CHARS = 80;
 
 export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -39,6 +48,16 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Feedback survey. Non-null opens the modal; the reason changes its copy
+  // and what happens after submitting ("summary" chains into the doctor
+  // summary). endHints maps conversation id → id of the reply the model
+  // flagged with SESSION_END_MARKER ("this conversation has probably reached
+  // its natural end") — the finished-session prompt only ever shows under
+  // that flagged reply, not after every answer. "Not yet" clears the hint
+  // until the model flags another reply.
+  const [surveyReason, setSurveyReason] = useState<SurveyReason | null>(null);
+  const [endHints, setEndHints] = useState<Record<string, string>>({});
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -111,6 +130,37 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
   const activeConversation =
     conversations.find((c) => c.id === activeId) ?? null;
   const messages = activeConversation?.messages ?? [];
+  const surveyDone = activeConversation?.surveyDone === true;
+
+  // Marks the active conversation as surveyed (for accounts this persists via
+  // the normal autosave, so the survey is never asked twice for one chat).
+  const markSurveyDone = useCallback(() => {
+    setConversations((prev) =>
+      prev.map((c) => (c.id === activeId ? { ...c, surveyDone: true } : c)),
+    );
+  }, [activeId]);
+
+  // "Have you finished this session?" — only under the newest reply, and only
+  // when the model itself flagged that reply as a natural end of the
+  // conversation (not after intermediate answers or question rounds).
+  const lastMessage = messages[messages.length - 1];
+  const showFinishedPrompt =
+    !isStreaming &&
+    !surveyDone &&
+    surveyReason === null &&
+    lastMessage?.role === "assistant" &&
+    lastMessage.content.trim().length > 0 &&
+    endHints[activeConversation?.id ?? ""] === lastMessage.id;
+
+  const dismissFinishedPrompt = useCallback(() => {
+    if (!activeConversation) return;
+    const id = activeConversation.id;
+    setEndHints((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }, [activeConversation]);
 
   // Auto-scroll to the latest content as messages grow / stream in — but only
   // while the user is at (or near) the bottom.
@@ -138,6 +188,56 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
     [isStreaming],
   );
 
+  const renameChat = useCallback((id: string, title: string) => {
+    const clean = title.trim().replace(/\s+/g, " ").slice(0, MAX_TITLE_CHARS);
+    if (!clean) return; // an empty rename keeps the old title
+    setConversations((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, title: clean } : c)),
+    );
+  }, []);
+
+  const deleteChat = useCallback(
+    (id: string) => {
+      setConversations((prev) => prev.filter((c) => c.id !== id));
+      if (activeId === id) setActiveId(null);
+    },
+    [activeId],
+  );
+
+  // Asks the model for a proper short title once the first exchange is
+  // complete. Fire-and-forget: on any failure the placeholder simply stays.
+  // The `c.title === placeholder` guard means a manual rename that happened
+  // while this request was in flight always wins.
+  const fetchAiTitle = useCallback(
+    async (convId: string, userText: string, reply: string) => {
+      try {
+        const res = await fetch("/api/title", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user: userText,
+            assistant: reply.slice(0, 2000),
+          }),
+        });
+        const data = await res.json().catch(() => null);
+        const title =
+          res.ok && typeof data?.title === "string" ? data.title.trim() : "";
+        if (!title) return;
+        const placeholder = titleFrom(userText);
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === convId && c.title === placeholder
+              ? { ...c, title: title.slice(0, MAX_TITLE_CHARS) }
+              : c,
+          ),
+        );
+      } catch {
+        // Placeholder title stays.
+      }
+    },
+    [],
+  );
+
   // Ends the session server-side (session/guest cookies cleared) and returns
   // to the landing page. A full navigation, not a client route change, so all
   // in-memory chat state is gone afterwards.
@@ -159,6 +259,7 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
       if (!text || isStreaming) return;
 
       // Resolve the conversation we're writing to (create one if this is a new chat).
+      const isNewConversation = !activeId;
       let convId = activeId;
       if (!convId) {
         convId = makeId();
@@ -196,7 +297,11 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
       setIsStreaming(true);
       track("message_sent");
 
-      const appendToAssistant = (chunk: string) =>
+      // The reply is accumulated locally too, so the title generator can see
+      // it without re-reading React state.
+      let reply = "";
+      const appendToAssistant = (chunk: string) => {
+        reply += chunk;
         setConversations((prev) =>
           prev.map((c) =>
             c.id === convId
@@ -211,6 +316,7 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
               : c,
           ),
         );
+      };
 
       // Send the full conversation history so follow-ups keep context
       // (e.g. answering the assistant's triage questions).
@@ -237,8 +343,43 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
       }
 
       setIsStreaming(false);
+
+      // The model appends SESSION_END_MARKER to a reply that wraps the
+      // conversation up. Strip it from the stored message and remember that
+      // THIS reply is a natural end — that's what makes the "Have you
+      // finished this session?" prompt appear.
+      if (reply.includes(SESSION_END_MARKER)) {
+        reply = reply.split(SESSION_END_MARKER).join("").trimEnd();
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === convId
+              ? {
+                  ...c,
+                  messages: c.messages.map((m) =>
+                    m.id === assistantId
+                      ? {
+                          ...m,
+                          content: m.content
+                            .split(SESSION_END_MARKER)
+                            .join("")
+                            .trimEnd(),
+                        }
+                      : m,
+                  ),
+                }
+              : c,
+          ),
+        );
+        setEndHints((prev) => ({ ...prev, [convId]: assistantId }));
+      }
+
+      // First exchange of a fresh conversation → ask for a proper AI title
+      // (replaces the truncated-text placeholder set above).
+      if (isNewConversation) {
+        void fetchAiTitle(convId, text, reply);
+      }
     },
-    [isStreaming, activeId, conversations],
+    [isStreaming, activeId, conversations, fetchAiTitle],
   );
 
   // Send from the input box.
@@ -258,6 +399,9 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
         activeId={activeId}
         onSelect={selectChat}
         onNewChat={startNewChat}
+        onRename={renameChat}
+        onDelete={deleteChat}
+        busy={isStreaming}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         identity={identity}
@@ -297,7 +441,12 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
           </a>
           {!isEmpty && (
             <div className="ml-auto">
-              <DoctorSummaryButton messages={messages} disabled={isStreaming} />
+              <DoctorSummaryButton
+                messages={messages}
+                disabled={isStreaming}
+                surveyDone={surveyDone}
+                onRequireSurvey={() => setSurveyReason("summary")}
+              />
             </div>
           )}
         </header>
@@ -311,7 +460,12 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
             >
               {activeConversation?.title ?? "Conversation"}
             </h1>
-            <DoctorSummaryButton messages={messages} disabled={isStreaming} />
+            <DoctorSummaryButton
+              messages={messages}
+              disabled={isStreaming}
+              surveyDone={surveyDone}
+              onRequireSurvey={() => setSurveyReason("summary")}
+            />
           </header>
         )}
 
@@ -335,9 +489,50 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
                   onAnswers={sendText}
                 />
               ))}
+
+              {showFinishedPrompt && (
+                <div className="mx-auto mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-2xl border border-forest/15 bg-white/70 px-4 py-3 animate-fade-in">
+                  <p className="text-sm text-ink/70">
+                    Have you finished this session?
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        track("finished_yes");
+                        // Also dismiss the prompt, so cancelling the survey
+                        // doesn't immediately re-ask — it returns after the
+                        // next reply instead.
+                        dismissFinishedPrompt();
+                        setSurveyReason("finished");
+                      }}
+                      className="btn btn-primary px-3.5 py-1.5 text-sm"
+                    >
+                      Yes, I&rsquo;m done
+                    </button>
+                    <button
+                      type="button"
+                      onClick={dismissFinishedPrompt}
+                      className="btn btn-ghost px-3.5 py-1.5 text-sm"
+                    >
+                      Not yet
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div ref={bottomRef} />
             </div>
           </div>
+        )}
+
+        {surveyReason !== null && activeConversation && (
+          <SurveyModal
+            reason={surveyReason}
+            messages={messages}
+            onSubmitted={markSurveyDone}
+            onClose={() => setSurveyReason(null)}
+          />
         )}
 
         <ChatInput

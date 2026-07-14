@@ -2,68 +2,35 @@
 
 import { useState } from "react";
 import type { Message } from "@/lib/types";
-import { buildPrintHtml, escapeHtml } from "@/lib/printSummary";
+import { openDoctorSummary } from "@/lib/doctorSummary";
 import { track } from "@/lib/analytics";
 
-// Generates a doctor-handover summary of the current conversation and opens it
-// in a print view (user saves as PDF from the print dialog).
+// Opens the doctor-handover summary — but only after the visitor has answered
+// the feedback survey for this conversation. Before that, clicking hands off
+// to the survey modal (which offers to create the summary once submitted).
 export default function DoctorSummaryButton({
   messages,
   disabled,
+  surveyDone,
+  onRequireSurvey,
 }: {
   messages: Message[];
   disabled: boolean;
+  surveyDone: boolean;
+  onRequireSurvey: () => void;
 }) {
   const [busy, setBusy] = useState(false);
 
   async function generate() {
     if (busy || disabled) return;
-    track("summary_clicked");
-
-    // Open the window synchronously so popup blockers allow it, then fill it in.
-    const win = window.open("", "_blank");
-    if (!win) {
-      alert("Please allow pop-ups for this site to create the PDF.");
+    if (!surveyDone) {
+      track("summary_survey_gate");
+      onRequireSurvey();
       return;
     }
-    win.document.write(
-      "<title>Preparing summary…</title><body style='font-family:sans-serif;padding:40px;color:#23332b'>Preparing your summary…</body>",
-    );
-
     setBusy(true);
     try {
-      const res = await fetch("/api/summary", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: messages
-            .filter((m) => m.content.trim().length > 0)
-            .map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data?.summary) {
-        track("summary_error", { status: res.status });
-        const msg = data?.error ?? `Could not create the summary (${res.status}).`;
-        win.document.open();
-        win.document.write(
-          `<body style='font-family:sans-serif;padding:40px;color:#23332b'>${escapeHtml(String(msg))}</body>`,
-        );
-        win.document.close();
-        return;
-      }
-
-      win.document.open();
-      win.document.write(buildPrintHtml(data.summary));
-      win.document.close();
-    } catch {
-      track("summary_error");
-      win.document.open();
-      win.document.write(
-        "<body style='font-family:sans-serif;padding:40px;color:#23332b'>Something went wrong while creating the summary. Please try again.</body>",
-      );
-      win.document.close();
+      await openDoctorSummary(messages);
     } finally {
       setBusy(false);
     }
