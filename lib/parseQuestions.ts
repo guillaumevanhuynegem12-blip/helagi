@@ -21,9 +21,18 @@ const OPTIONS_RE =
   /^\s*\**\s*(?:Options?|Answers?|Choices?|Select one)\s*\**\s*:\s*(.+)$/i;
 // options tucked into the question line itself, e.g. "1. Fever? (Yes / No)"
 const INLINE_OPTIONS_RE = /\(([^()]*\/[^()]*)\)\s*\**\s*$/;
+// question and options crammed onto one line, e.g.
+// "Would you like a care plan? Options: Yes, please / No, thanks"
+const OPTIONS_SUFFIX_RE =
+  /^(.*\?)\s*\**\s*(?:Options?|Answers?|Choices?)\s*\**\s*:\s*(.+)$/i;
 
 function cleanLabel(s: string): string {
   return s.replace(/\*\*/g, "").trim();
+}
+
+// Fallback numbering for questions the model forgot to number.
+function nextNumber(questions: ParsedQuestion[]): number {
+  return questions.reduce((max, q) => Math.max(max, q.number), 0) + 1;
 }
 
 function splitOptions(s: string): string[] {
@@ -31,6 +40,41 @@ function splitOptions(s: string): string[] {
     .split(/\s*[/|]\s*/)
     .map(cleanLabel)
     .filter((o) => o.length > 0 && o.length <= 40);
+}
+
+// Recovers the user's answers from the compiled reply that QuestionCard sent
+// ("1. Question text — Yes" per line, or "Question text — Yes" for a single
+// quick question), so an already-answered questionnaire can keep rendering as
+// pills with the chosen option highlighted — even after a reload. Questions
+// answered by typing free text instead of clicking simply yield no match.
+export function matchAnswers(
+  questions: ParsedQuestion[],
+  reply: string,
+): Record<number, string> {
+  const answers: Record<number, string> = {};
+  const lines = reply.split("\n");
+  for (const q of questions) {
+    for (const line of lines) {
+      const t = line.trim();
+      let rest: string | null = null;
+      if (t.startsWith(`${q.number}. `)) {
+        rest = t.slice(`${q.number}. `.length);
+      } else if (t.startsWith(q.text)) {
+        rest = t.slice(q.text.length);
+      }
+      if (rest === null) continue;
+      const sep = rest.lastIndexOf(" — ");
+      if (sep === -1) continue;
+      const answer = rest.slice(sep + 3).trim();
+      if (!answer) continue;
+      // For button questions only accept an actual option, so an unrelated
+      // line can't masquerade as an answer.
+      if (q.options && !q.options.includes(answer)) continue;
+      answers[q.number] = answer;
+      break;
+    }
+  }
+  return answers;
 }
 
 export function parseTriageQuestions(content: string): ParsedTriage | null {
@@ -73,6 +117,22 @@ export function parseTriageQuestions(content: string): ParsedTriage | null {
         }
       }
 
+      // "Options:" crammed onto the question line, e.g.
+      // "1. Fever? Options: Yes / No"
+      const suffix = qMatch[2].match(OPTIONS_SUFFIX_RE);
+      if (suffix) {
+        const options = splitOptions(suffix[2]);
+        if (options.length >= 2) {
+          questions.push({
+            number: Number(qMatch[1]),
+            text: cleanLabel(suffix[1]),
+            options,
+          });
+          i += 1;
+          continue;
+        }
+      }
+
       // Numbered line without options: treat as a free-text question only if
       // it clearly reads as one (ends with "?" or invites typing).
       const text = qMatch[2].trim();
@@ -86,6 +146,43 @@ export function parseTriageQuestions(content: string): ParsedTriage | null {
         continue;
       }
     }
+
+    // Unnumbered question with options on the same line, e.g.
+    // "Would you like a care plan? Options: Yes, please / No, thanks"
+    const bare = lines[i].match(OPTIONS_SUFFIX_RE);
+    if (bare) {
+      const options = splitOptions(bare[2]);
+      if (options.length >= 2) {
+        questions.push({
+          number: nextNumber(questions),
+          text: cleanLabel(bare[1]),
+          options,
+        });
+        i += 1;
+        continue;
+      }
+    }
+
+    // Unnumbered question line followed by an Options line.
+    const trimmed = lines[i].trim();
+    if (/\?\**\s*$/.test(trimmed)) {
+      let j = i + 1;
+      while (j < lines.length && lines[j].trim() === "") j++;
+      const oMatch = j < lines.length ? lines[j].match(OPTIONS_RE) : null;
+      if (oMatch) {
+        const options = splitOptions(oMatch[1]);
+        if (options.length >= 2) {
+          questions.push({
+            number: nextNumber(questions),
+            text: cleanLabel(trimmed),
+            options,
+          });
+          i = j + 1;
+          continue;
+        }
+      }
+    }
+
     keep.push(lines[i]);
     i += 1;
   }

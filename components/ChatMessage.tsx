@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Message } from "@/lib/types";
-import { SESSION_END_MARKER } from "@/lib/constants";
-import { parseTriageQuestions } from "@/lib/parseQuestions";
+import { NEW_MESSAGE_MARKER, SESSION_END_MARKER } from "@/lib/constants";
+import { matchAnswers, parseTriageQuestions } from "@/lib/parseQuestions";
 import TypingIndicator from "./TypingIndicator";
 import QuestionCard from "./QuestionCard";
 import { HelagiMark } from "./Logo";
@@ -69,21 +69,43 @@ const markdownComponents = {
   ),
 };
 
-// The model ends a wrap-up reply with SESSION_END_MARKER; ChatApp strips it
-// from the stored message once streaming completes. While tokens are still
-// arriving, a complete or half-arrived marker can transiently sit at the end
-// of the text — never render it. (A legitimate "[[…" mid-stream un-hides
-// itself as soon as more tokens show it isn't the marker.)
-function stripEndMarker(text: string): string {
-  let out = text.split(SESSION_END_MARKER).join("");
-  const max = Math.min(SESSION_END_MARKER.length - 1, out.length);
-  for (let len = max; len >= 2; len--) {
-    if (out.endsWith(SESSION_END_MARKER.slice(0, len))) {
-      out = out.slice(0, -len);
-      break;
+// The model ends a wrap-up reply with SESSION_END_MARKER and separates a
+// trailing question from the answer with NEW_MESSAGE_MARKER; ChatApp handles
+// both once streaming completes (strip / split into a second bubble). While
+// tokens are still arriving, a complete or half-arrived marker can
+// transiently sit in the text — never render it. A complete NEW_MESSAGE_MARKER
+// mid-stream just reads as a paragraph break until the split happens.
+// (A legitimate "[[…" mid-stream un-hides itself as soon as more tokens show
+// it isn't a marker.)
+const MARKERS = [SESSION_END_MARKER, NEW_MESSAGE_MARKER];
+
+function stripMarkers(text: string): string {
+  let out = text
+    .split(NEW_MESSAGE_MARKER)
+    .join("\n\n")
+    .split(SESSION_END_MARKER)
+    .join("");
+  let partial = 0;
+  for (const marker of MARKERS) {
+    const max = Math.min(marker.length - 1, out.length);
+    for (let len = max; len >= 2; len--) {
+      if (out.endsWith(marker.slice(0, len))) {
+        partial = Math.max(partial, len);
+        break;
+      }
     }
   }
+  if (partial > 0) out = out.slice(0, -partial);
   return out.trimEnd();
+}
+
+// Older replies (and the occasional model slip) have a heading glued to the
+// end of the previous sentence — "…your situation.## What this most likely
+// is" — where markdown needs the "##" at the start of a line. Give such
+// headings their own paragraph. (The chat route now inserts the break itself
+// between tool turns; this covers saved history.)
+function normalizeHeadings(text: string): string {
+  return text.replace(/([^\n#])(#{2,6} )/g, "$1\n\n$2");
 }
 
 export default function ChatMessage({
@@ -91,6 +113,7 @@ export default function ChatMessage({
   isStreaming,
   isLast = false,
   onAnswers,
+  userReply,
 }: {
   message: Message;
   isStreaming: boolean;
@@ -98,6 +121,11 @@ export default function ChatMessage({
   isLast?: boolean;
   /** called with the compiled answers when the user submits the questionnaire */
   onAnswers?: (compiled: string) => void;
+  /**
+   * the user message that followed this one, if any — used to restore the
+   * chosen options on an already-answered questionnaire
+   */
+  userReply?: string;
 }) {
   const isUser = message.role === "user";
   // Show the typing indicator only for an assistant turn that has no text yet.
@@ -125,11 +153,29 @@ export default function ChatMessage({
 
   // Marker-free view of the message used for everything visible: rendering,
   // question parsing, and the copy button.
-  const content = isUser ? message.content : stripEndMarker(message.content);
+  const content = isUser
+    ? message.content
+    : normalizeHeadings(stripMarkers(message.content));
 
+  // Parse the questionnaire on every settled assistant message — not just the
+  // newest one — so an answered card keeps its pill look instead of reverting
+  // to raw "Options: Yes / No" text once the next reply arrives.
   const triage = useMemo(
-    () => (!isUser && interactive ? parseTriageQuestions(content) : null),
-    [isUser, interactive, content],
+    () =>
+      !isUser && !showTyping && !streamingHere
+        ? parseTriageQuestions(content)
+        : null,
+    [isUser, showTyping, streamingHere, content],
+  );
+
+  // For an already-answered questionnaire, recover which options the user
+  // picked from the answer message that followed it.
+  const answered = useMemo(
+    () =>
+      triage && !interactive && userReply
+        ? matchAnswers(triage.questions, userReply)
+        : undefined,
+    [triage, interactive, userReply],
   );
 
   // "Copy response" below finished assistant replies. Copies the raw message
@@ -198,8 +244,9 @@ export default function ChatMessage({
               )}
               <QuestionCard
                 questions={triage.questions}
-                disabled={isStreaming}
-                onSubmit={onAnswers!}
+                disabled={!interactive}
+                onSubmit={interactive ? onAnswers : undefined}
+                answered={answered}
               />
             </>
           ) : (

@@ -17,3 +17,10 @@ export const DISCLAIMER =
 // strips it from display/storage and uses it to time the "Have you finished
 // this session?" prompt.
 export const SESSION_END_MARKER = "[[SESSION_MAYBE_OVER]]";
+
+// Invisible marker the model puts between a finished answer and a trailing
+// selectable question (e.g. the recovery/care plan offer — see
+// <recovery_plans> in lib/systemPrompt.ts). ChatApp splits the reply into a
+// separate assistant message at the marker so the question reliably renders
+// as clickable buttons in its own bubble.
+export const NEW_MESSAGE_MARKER = "[[NEW_MESSAGE]]";

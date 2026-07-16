@@ -311,15 +311,20 @@ export default async function LandingPage() {
             </div>
 
             <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2">
-              {HERO_POINTS.map((point) => (
-                <li
-                  key={point}
-                  className="flex items-center gap-1.5 text-sm font-medium text-ink/65"
-                >
-                  <Icon className="h-4 w-4 text-leaf">{icons.check}</Icon>
-                  {point}
-                </li>
-              ))}
+              {HERO_POINTS.map((point) => {
+                const isFree = point === "Free during the prototype phase";
+                return (
+                  <li
+                    key={point}
+                    className={`flex items-center gap-1.5 text-sm ${
+                      isFree ? "font-bold text-ink" : "font-medium text-ink/65"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 text-leaf">{icons.check}</Icon>
+                    {point}
+                  </li>
+                );
+              })}
             </ul>
           </div>
 

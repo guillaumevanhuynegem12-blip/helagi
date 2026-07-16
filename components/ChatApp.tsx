@@ -15,7 +15,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Conversation, Message } from "@/lib/types";
-import { SESSION_END_MARKER } from "@/lib/constants";
+import { NEW_MESSAGE_MARKER, SESSION_END_MARKER } from "@/lib/constants";
 import { streamChat } from "@/lib/streamChat";
 import { track } from "@/lib/analytics";
 import ChatMessage from "@/components/ChatMessage";
@@ -24,6 +24,9 @@ import EmptyState from "@/components/EmptyState";
 import Sidebar, { type SidebarIdentity } from "@/components/Sidebar";
 import DoctorSummaryButton from "@/components/DoctorSummaryButton";
 import SurveyModal, { type SurveyReason } from "@/components/SurveyModal";
+import PrototypeNoticeModal, {
+  PROTOTYPE_NOTICE_KEY,
+} from "@/components/PrototypeNoticeModal";
 import { HelagiLockup } from "@/components/Logo";
 
 function makeId() {
@@ -59,6 +62,11 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
   const [surveyReason, setSurveyReason] = useState<SurveyReason | null>(null);
   const [endHints, setEndHints] = useState<Record<string, string>>({});
 
+  // One-time "free during the prototype, we'd love feedback" welcome. Shown the
+  // first time the chat opens on this browser, then remembered so it doesn't
+  // nag on later visits.
+  const [showNotice, setShowNotice] = useState(false);
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   // Whether the view should follow the newest text. Scrolling up while the
@@ -74,6 +82,14 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
 
   useEffect(() => {
     track("chat_opened");
+    try {
+      if (window.localStorage.getItem(PROTOTYPE_NOTICE_KEY) !== "1") {
+        setShowNotice(true);
+      }
+    } catch {
+      // Storage unavailable (private mode) — just show the welcome.
+      setShowNotice(true);
+    }
   }, []);
 
   // Accounts: fetch the private server-side history once on mount.
@@ -319,12 +335,20 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
       };
 
       // Send the full conversation history so follow-ups keep context
-      // (e.g. answering the assistant's triage questions).
-      const history = (
-        conversations.find((c) => c.id === convId)?.messages ?? []
-      )
-        .filter((m) => m.content.trim().length > 0)
-        .map((m) => ({ role: m.role, content: m.content }));
+      // (e.g. answering the assistant's triage questions). A reply that was
+      // split into multiple bubbles (see below) is merged back into a single
+      // assistant turn, so the API always sees alternating roles.
+      const history: { role: Message["role"]; content: string }[] = [];
+      for (const m of conversations.find((c) => c.id === convId)?.messages ??
+        []) {
+        if (m.content.trim().length === 0) continue;
+        const last = history[history.length - 1];
+        if (last && last.role === m.role) {
+          last.content += "\n\n" + m.content;
+        } else {
+          history.push({ role: m.role, content: m.content });
+        }
+      }
 
       try {
         for await (const chunk of streamChat([
@@ -344,39 +368,62 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
 
       setIsStreaming(false);
 
-      // The model appends SESSION_END_MARKER to a reply that wraps the
-      // conversation up. Strip it from the stored message and remember that
-      // THIS reply is a natural end — that's what makes the "Have you
-      // finished this session?" prompt appear.
-      if (reply.includes(SESSION_END_MARKER)) {
+      // Finalize the streamed reply:
+      // - SESSION_END_MARKER means this reply is a natural end of the
+      //   conversation — strip it and remember it, which is what makes the
+      //   "Have you finished this session?" prompt appear.
+      // - NEW_MESSAGE_MARKER separates a finished answer from a trailing
+      //   selectable question (e.g. the recovery/care plan offer). Split the
+      //   stored message there so the question gets its own bubble and
+      //   renders as clickable buttons.
+      const hadEndMarker = reply.includes(SESSION_END_MARKER);
+      if (hadEndMarker) {
         reply = reply.split(SESSION_END_MARKER).join("").trimEnd();
+      }
+      const parts = reply
+        .split(NEW_MESSAGE_MARKER)
+        .map((p) => p.trim())
+        .filter((p) => p.length > 0);
+      if (hadEndMarker || reply.includes(NEW_MESSAGE_MARKER)) {
         setConversations((prev) =>
           prev.map((c) =>
             c.id === convId
               ? {
                   ...c,
-                  messages: c.messages.map((m) =>
-                    m.id === assistantId
-                      ? {
-                          ...m,
-                          content: m.content
-                            .split(SESSION_END_MARKER)
-                            .join("")
-                            .trimEnd(),
-                        }
-                      : m,
-                  ),
+                  messages: c.messages.flatMap((m) => {
+                    if (m.id !== assistantId) return [m];
+                    if (parts.length === 0) return [{ ...m, content: reply }];
+                    // The last part keeps the original id, so the
+                    // end-of-session hint below still points at the newest
+                    // reply.
+                    return parts.map((content, i) =>
+                      i === parts.length - 1
+                        ? { ...m, content }
+                        : {
+                            id: makeId(),
+                            role: "assistant" as const,
+                            content,
+                          },
+                    );
+                  }),
                 }
               : c,
           ),
         );
+      }
+      if (hadEndMarker) {
         setEndHints((prev) => ({ ...prev, [convId]: assistantId }));
       }
 
       // First exchange of a fresh conversation → ask for a proper AI title
-      // (replaces the truncated-text placeholder set above).
+      // (replaces the truncated-text placeholder set above). The title
+      // generator sees the reply without internal markers.
       if (isNewConversation) {
-        void fetchAiTitle(convId, text, reply);
+        void fetchAiTitle(
+          convId,
+          text,
+          parts.length > 0 ? parts.join("\n\n") : reply,
+        );
       }
     },
     [isStreaming, activeId, conversations, fetchAiTitle],
@@ -487,6 +534,11 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
                   isStreaming={isStreaming}
                   isLast={index === messages.length - 1}
                   onAnswers={sendText}
+                  userReply={
+                    messages[index + 1]?.role === "user"
+                      ? messages[index + 1].content
+                      : undefined
+                  }
                 />
               ))}
 
@@ -524,6 +576,10 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
               <div ref={bottomRef} />
             </div>
           </div>
+        )}
+
+        {showNotice && (
+          <PrototypeNoticeModal onClose={() => setShowNotice(false)} />
         )}
 
         {surveyReason !== null && activeConversation && (

@@ -137,6 +137,11 @@ export async function POST(req: Request) {
       // without emitting text), which would stream nothing and leave the user
       // staring at an empty bubble. Track streamed text so we can fall back.
       let streamedChars = 0;
+      // Last character streamed to the browser. Text from consecutive tool
+      // turns would otherwise be glued together ("…your situation.## What
+      // this most likely is"), which breaks markdown headings — they only
+      // render at the start of a line.
+      let tailChar = "";
       try {
         let recent = messages.slice(-MAX_HISTORY_MESSAGES);
         // The API requires the first message to be a user turn; if trimming cut
@@ -161,8 +166,19 @@ export async function POST(req: Request) {
           });
 
           // Stream the assistant's text to the browser as it arrives.
+          let turnHasText = false;
           stream.on("text", (delta) => {
+            if (delta.length === 0) return;
+            // The model resumed after a tool call: if the previous turn's
+            // text didn't end its line, force a paragraph break so markdown
+            // starting this turn (e.g. "## Heading") renders correctly.
+            if (!turnHasText && streamedChars > 0 && tailChar !== "\n") {
+              controller.enqueue(encoder.encode("\n\n"));
+              tailChar = "\n";
+            }
+            turnHasText = true;
             streamedChars += delta.length;
+            tailChar = delta[delta.length - 1];
             controller.enqueue(encoder.encode(delta));
           });
 

@@ -7,16 +7,25 @@ import type { ParsedQuestion } from "@/lib/parseQuestions";
 // with its option buttons right next to it (plus a small text field for
 // free-text ones). Compiles the answers into a single numbered message that
 // repeats each question, so the sent message is self-explanatory.
+//
+// Also renders already-answered questionnaires (older messages): pass
+// `disabled` with the recovered `answered` map and the card shows the chosen
+// options highlighted instead of falling back to raw text.
 export default function QuestionCard({
   questions,
   disabled,
   onSubmit,
+  answered,
 }: {
   questions: ParsedQuestion[];
   disabled: boolean;
-  onSubmit: (compiled: string) => void;
+  onSubmit?: (compiled: string) => void;
+  /** previously chosen answers (restores the look of an answered card) */
+  answered?: Record<number, string>;
 }) {
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [answers, setAnswers] = useState<Record<number, string>>(
+    () => answered ?? {},
+  );
   const [extra, setExtra] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -27,13 +36,23 @@ export default function QuestionCard({
     (q) => (answers[q.number] ?? "").length > 0,
   );
 
+  // A single yes/no-style question (e.g. the recovery/care plan offer) sends
+  // on click — no separate "Send my answers" step.
+  const singleQuick = questions.length === 1 && optionQuestions.length === 1;
+
   function pick(num: number, choice: string) {
-    if (locked) return;
+    if (locked || !onSubmit) return;
+    if (singleQuick) {
+      setAnswers({ [num]: choice });
+      setSubmitted(true);
+      onSubmit(`${questions[0].text} — ${choice}`);
+      return;
+    }
     setAnswers((prev) => ({ ...prev, [num]: choice }));
   }
 
   function submit() {
-    if (locked || !allChosen) return;
+    if (locked || !allChosen || !onSubmit) return;
     const lines = questions
       .map((q) => {
         const a = (answers[q.number] ?? "").trim();
@@ -73,8 +92,8 @@ export default function QuestionCard({
                     className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest ${
                       selected
                         ? "border-forest bg-forest text-cream shadow-sm"
-                        : "border-forest/25 bg-white text-forest enabled:hover:border-forest/45 enabled:hover:bg-cream-muted"
-                    } disabled:opacity-60`}
+                        : "border-forest/25 bg-white text-forest enabled:hover:border-forest/45 enabled:hover:bg-cream-muted disabled:opacity-50"
+                    }`}
                   >
                     {opt}
                   </button>
@@ -92,7 +111,7 @@ export default function QuestionCard({
               disabled={locked}
               value={answers[q.number] ?? ""}
               onChange={(e) => pick(q.number, e.target.value)}
-              placeholder="Type a short answer (optional)"
+              placeholder={locked ? "" : "Type a short answer (optional)"}
               aria-label={`Answer to question ${q.number}`}
               className="input-field max-w-sm px-3 py-1.5 text-sm"
             />
@@ -100,7 +119,7 @@ export default function QuestionCard({
         ),
       )}
 
-      {!submitted && (
+      {!submitted && !disabled && !singleQuick && (
         <>
           <div>
             <p className="mb-1.5 text-[15px] font-medium text-ink">
