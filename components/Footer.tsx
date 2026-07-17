@@ -38,7 +38,7 @@ export default function Footer() {
             A free health assistant that helps you understand your symptoms in
             plain language — and know what to do next.
           </p>
-          <p className="mt-4 max-w-sm rounded-xl border border-clay/30 bg-clay/[0.06] px-3.5 py-2.5 text-xs leading-5 text-ink/60">
+          <p className="mt-4 max-w-sm rounded-xl border border-clay/35 bg-clay/[0.07] px-3.5 py-2.5 text-xs leading-5 text-ink/60">
             Helagi does not replace a qualified healthcare professional. In an
             emergency, call your local emergency number (like 112 or 911)
             immediately.

@@ -79,23 +79,6 @@ const icons = {
       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
     </>
   ),
-  heart: (
-    <path d="M19 14c1.5-1.5 3-3.3 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3.4.9-4.5 2.3A5.6 5.6 0 0 0 7.5 3 5.5 5.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7z" />
-  ),
-  stethoscope: (
-    <>
-      <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .1.3" />
-      <path d="M8 15v1a6 6 0 0 0 6 6 6 6 0 0 0 6-6v-4" />
-      <circle cx="20" cy="10" r="2" />
-    </>
-  ),
-  cap: (
-    <>
-      <path d="M22 10 12 5 2 10l10 5z" />
-      <path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5" />
-      <path d="M22 10v6" />
-    </>
-  ),
   alert: (
     <>
       <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
@@ -174,24 +157,6 @@ const FEATURES = [
     icon: icons.book,
     title: "There whenever worry strikes",
     text: "3 a.m. or Sunday afternoon — Helagi answers the moment you need it. No appointment, no waiting room, no rush.",
-  },
-];
-
-const AUDIENCES = [
-  {
-    icon: icons.heart,
-    title: "For you and your family",
-    text: "Late-night worries, a child's fever, a pain that won't go away — get a calm read on what it might be and whether it can wait until morning.",
-  },
-  {
-    icon: icons.stethoscope,
-    title: "For medical professionals",
-    text: "Patients arrive with a structured, printable summary of their symptoms instead of a vague story — a clearer starting point for the consult. Helagi never replaces clinical judgment.",
-  },
-  {
-    icon: icons.cap,
-    title: "For students",
-    text: "A calm way to explore how symptoms are described, questioned, and triaged — the same way you'll meet them in practice.",
   },
 ];
 
@@ -335,7 +300,7 @@ export default async function LandingPage() {
 
         {/* Always-visible medical disclaimer */}
         <div className="shell pb-16 lg:pb-20">
-          <div className="mx-auto flex max-w-3xl items-start gap-3 rounded-2xl border border-clay/35 bg-white/80 px-5 py-4">
+          <div className="mx-auto flex max-w-3xl items-start gap-3 rounded-2xl border border-clay/35 bg-clay/[0.07] px-5 py-4">
             <Icon className="mt-0.5 h-5 w-5 shrink-0 text-clay">
               {icons.alert}
             </Icon>
@@ -349,33 +314,39 @@ export default async function LandingPage() {
           </div>
         </div>
 
-        {/* WHY — Helagi's belief and ambition (the Golden Circle: start with why) */}
-        <section id="why" className="shell scroll-mt-24 pb-16 lg:pb-24">
-          <Reveal className="mx-auto max-w-2xl text-center">
-            <p className="eyebrow">Why we exist</p>
-            <h2 className="mt-3 font-display text-3xl font-medium tracking-tight text-forest-deep sm:text-4xl">
-              We believe everyone deserves to understand their own health
-            </h2>
-            <p className="mt-6 text-[16px] leading-8 text-ink/70">
-              That belief is where Helagi begins. Today, understanding what is
-              happening in your own body is harder than it should be — clear
-              answers hide behind medical jargon, waiting rooms, and
-              frightening search results, and worry fills the gap.
-            </p>
-            <p className="mt-4 text-[16px] leading-8 text-ink/70">
-              Our ambition is to close that gap: calm, honest health
-              understanding for everyone, everywhere, at any hour. Every
-              question Helagi asks and every answer it gives exists in service
-              of that goal — the product is simply how we pursue it.
-            </p>
-          </Reveal>
-        </section>
-
-        {/* HOW — the three steps */}
+        {/* WHY — Helagi's belief and ambition (the Golden Circle: start with
+            why). A white band, so the section starts on its own surface
+            instead of blending into the beige hero/disclaimer above. The page
+            alternates strictly between the cream base and this one band
+            treatment — no other tints. */}
         <section
-          id="how-it-works"
+          id="why"
           className="scroll-mt-24 border-y border-forest/10 bg-white/70"
         >
+          <div className="shell py-16 lg:py-20">
+            <Reveal className="mx-auto max-w-2xl text-center">
+              <p className="eyebrow">Why we exist</p>
+              <h2 className="mt-3 font-display text-3xl font-medium tracking-tight text-forest-deep sm:text-4xl">
+                We believe everyone deserves to understand their own health
+              </h2>
+              <p className="mt-6 text-[16px] leading-8 text-ink/70">
+                That belief is where Helagi begins. Today, understanding what
+                is happening in your own body is harder than it should be —
+                clear answers hide behind medical jargon, waiting rooms, and
+                frightening search results, and worry fills the gap.
+              </p>
+              <p className="mt-4 text-[16px] leading-8 text-ink/70">
+                Our ambition is to close that gap: calm, honest health
+                understanding for everyone, everywhere, at any hour. Every
+                question Helagi asks and every answer it gives exists in
+                service of that goal — the product is simply how we pursue it.
+              </p>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* HOW — the three steps, on the cream base between two bands */}
+        <section id="how-it-works" className="scroll-mt-24">
           <div className="shell py-16 lg:py-20">
             <Reveal className="mx-auto max-w-2xl text-center">
               <p className="eyebrow">How it works</p>
@@ -413,100 +384,83 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        {/* HOW — the promises behind every answer (dark band) */}
+        {/* HOW — the promises behind every answer. Same dark "poster card"
+            treatment as the final CTA (one shared gradient + glow recipe). */}
         <section id="trust" className="scroll-mt-24">
-          <div className="shell py-16 lg:py-24">
-            <div className="overflow-hidden rounded-3xl bg-forest-deep bg-gradient-to-br from-forest-deep via-forest-deep to-forest px-6 py-12 text-cream sm:px-10 lg:px-14 lg:py-16">
-              <Reveal className="mx-auto max-w-2xl text-center">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sage">
-                  Trust &amp; safety
-                </p>
-                <h2 className="mt-3 font-display text-3xl font-medium tracking-tight sm:text-4xl">
-                  Built to be careful
-                </h2>
-                <p className="mt-4 text-[15px] leading-7 text-cream/70">
-                  Health guidance is only useful if you can rely on it — and
-                  know exactly where its limits are.
-                </p>
-              </Reveal>
+          <div className="shell pb-16 lg:pb-24">
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-forest to-forest-deep px-6 py-12 text-cream sm:px-10 lg:px-14 lg:py-16">
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-sage/15 blur-3xl"
+              />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -bottom-28 -left-16 h-72 w-72 rounded-full bg-clay/10 blur-3xl"
+              />
+              <div className="relative">
+                <Reveal className="mx-auto max-w-2xl text-center">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sage">
+                    Trust &amp; safety
+                  </p>
+                  <h2 className="mt-3 font-display text-3xl font-medium tracking-tight sm:text-4xl">
+                    Built to be careful
+                  </h2>
+                  <p className="mt-4 text-[15px] leading-7 text-cream/70">
+                    Health guidance is only useful if you can rely on it — and
+                    know exactly where its limits are.
+                  </p>
+                </Reveal>
 
-              <div className="mt-12 grid grid-cols-1 gap-x-10 gap-y-8 sm:grid-cols-2">
-                {TRUST_POINTS.map(({ icon, title, text }, i) => (
-                  <Reveal key={title} delay={(i % 2) * 100}>
-                    <div className="flex gap-4">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-sage">
-                        <Icon>{icon}</Icon>
+                <div className="mt-12 grid grid-cols-1 gap-x-10 gap-y-8 sm:grid-cols-2">
+                  {TRUST_POINTS.map(({ icon, title, text }, i) => (
+                    <Reveal key={title} delay={(i % 2) * 100}>
+                      <div className="flex gap-4">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-sage">
+                          <Icon>{icon}</Icon>
+                        </div>
+                        <div>
+                          <h3 className="text-[15px] font-semibold">{title}</h3>
+                          <p className="mt-1.5 text-[13.5px] leading-6 text-cream/70">
+                            {text}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-[15px] font-semibold">{title}</h3>
-                        <p className="mt-1.5 text-[13.5px] leading-6 text-cream/70">
-                          {text}
-                        </p>
-                      </div>
-                    </div>
-                  </Reveal>
-                ))}
+                    </Reveal>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* WHAT — the product itself */}
-        <section id="what-you-get" className="shell scroll-mt-24 pb-16 lg:pb-24">
-          <Reveal className="mx-auto max-w-2xl text-center">
-            <p className="eyebrow">What you get</p>
-            <h2 className="mt-3 font-display text-3xl font-medium tracking-tight text-forest-deep sm:text-4xl">
-              More than a chat box
-            </h2>
-            <p className="mt-4 text-[15px] leading-7 text-ink/65">
-              Helagi is built end-to-end around one job: helping you understand
-              a health worry and decide what to do next.
-            </p>
-          </Reveal>
-
-          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map(({ icon, title, text }, i) => (
-              <Reveal key={title} delay={(i % 3) * 100}>
-                <div className="card h-full px-6 py-6 transition duration-200 hover:-translate-y-0.5 hover:shadow-lift">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-forest/[0.08] text-forest">
-                    <Icon>{icon}</Icon>
-                  </div>
-                  <h3 className="mt-4 text-[15px] font-semibold text-forest-deep">
-                    {title}
-                  </h3>
-                  <p className="mt-1.5 text-[13.5px] leading-6 text-ink/65">
-                    {text}
-                  </p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </section>
-
-        {/* Audiences */}
+        {/* WHAT — the product itself (the second white band) */}
         <section
-          id="who-it-helps"
+          id="what-you-get"
           className="scroll-mt-24 border-y border-forest/10 bg-white/70"
         >
           <div className="shell py-16 lg:py-20">
             <Reveal className="mx-auto max-w-2xl text-center">
-              <p className="eyebrow">Who it helps</p>
+              <p className="eyebrow">What you get</p>
               <h2 className="mt-3 font-display text-3xl font-medium tracking-tight text-forest-deep sm:text-4xl">
-                Made for real health worries
+                More than a chat box
               </h2>
+              <p className="mt-4 text-[15px] leading-7 text-ink/65">
+                Helagi is built end-to-end around one job: helping you
+                understand a health worry and decide what to do next.
+              </p>
             </Reveal>
 
-            <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
-              {AUDIENCES.map(({ icon, title, text }, i) => (
-                <Reveal key={title} delay={i * 100}>
-                  <div className="card h-full px-6 py-7">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-sage/20 text-forest">
+            <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {FEATURES.map(({ icon, title, text }, i) => (
+                <Reveal key={title} delay={(i % 3) * 100}>
+                  <div className="card h-full px-6 py-6 transition duration-200 hover:-translate-y-0.5 hover:shadow-lift">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-forest/[0.08] text-forest">
                       <Icon>{icon}</Icon>
                     </div>
-                    <h3 className="mt-4 text-base font-semibold text-forest-deep">
+                    <h3 className="mt-4 text-[15px] font-semibold text-forest-deep">
                       {title}
                     </h3>
-                    <p className="mt-2 text-[14px] leading-6 text-ink/65">
+                    <p className="mt-1.5 text-[13.5px] leading-6 text-ink/65">
                       {text}
                     </p>
                   </div>
@@ -516,84 +470,8 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        {/* Support, not a replacement for care */}
-        <section className="shell py-16 lg:py-24">
-          <Reveal>
-            <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-              <div className="card px-6 py-8 sm:px-8">
-                <p className="eyebrow">Know the limits</p>
-                <h2 className="mt-3 font-display text-2xl font-medium tracking-tight text-forest-deep sm:text-3xl">
-                  Helagi supports you.
-                  <br />
-                  It never replaces care.
-                </h2>
-                <p className="mt-4 text-[15px] leading-7 text-ink/70">
-                  Helagi helps you understand symptoms, prepare for
-                  appointments, and decide how urgent something looks. It does
-                  not diagnose, prescribe, or replace the judgment of a
-                  healthcare professional — and it will tell you so whenever a
-                  situation needs real medical eyes.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-clay/40 bg-clay/[0.08] px-6 py-8 sm:px-8">
-                <div className="flex items-center gap-2.5">
-                  <Icon className="h-5 w-5 text-clay">{icons.phone}</Icon>
-                  <h3 className="text-[15px] font-semibold text-forest-deep">
-                    In an emergency, don&rsquo;t chat — call
-                  </h3>
-                </div>
-                <p className="mt-3 text-[14px] leading-6 text-ink/70">
-                  Call your local emergency number (like 112 or 911) right away
-                  if you or someone near you has:
-                </p>
-                <ul className="mt-3 space-y-2">
-                  {EMERGENCY_SIGNS.map((sign) => (
-                    <li
-                      key={sign}
-                      className="flex items-start gap-2 text-[14px] leading-6 text-ink/80"
-                    >
-                      <Icon className="mt-1 h-4 w-4 shrink-0 text-clay">
-                        {icons.alert}
-                      </Icon>
-                      {sign}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </Reveal>
-        </section>
-
-        {/* Early access — honest pricing note: free now, likely paid after the
-            real launch. Phrased around feedback/surveys, NOT conversation
-            data: guest chats never touch our servers and account chats stay
-            private, and this section must not suggest otherwise. */}
-        <section id="early-access" className="shell scroll-mt-24 pb-16 lg:pb-24">
-          <Reveal>
-            <div className="mx-auto max-w-2xl rounded-3xl border border-forest/15 bg-white/70 px-6 py-10 text-center sm:px-10">
-              <p className="eyebrow">Early access</p>
-              <h2 className="mt-3 font-display text-2xl font-medium tracking-tight text-forest-deep sm:text-3xl">
-                Free for now — not forever
-              </h2>
-              <p className="mt-4 text-[15px] leading-7 text-ink/70">
-                Helagi is a prototype, and while it grows everything is free.
-                All we ask in return is your honest feedback — the short
-                surveys after a session tell us where Helagi truly helps and
-                where it must get better.
-              </p>
-              <p className="mt-3 text-[15px] leading-7 text-ink/70">
-                Once that work is done and Helagi launches for real, it will
-                most likely become a paid service. So this is the best moment
-                to use it: it costs nothing, and what you tell us shapes what
-                Helagi becomes.
-              </p>
-            </div>
-          </Reveal>
-        </section>
-
         {/* Final CTA */}
-        <section id="get-started" className="shell scroll-mt-24 pb-20 lg:pb-28">
+        <section id="get-started" className="shell scroll-mt-24 py-16 lg:py-24">
           <Reveal>
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-forest to-forest-deep px-6 py-14 text-center text-cream sm:px-10 lg:py-16">
               <div
@@ -645,6 +523,55 @@ export default async function LandingPage() {
                     email and a password. No personal or medical details.
                   </p>
                 )}
+              </div>
+            </div>
+          </Reveal>
+        </section>
+
+        {/* Support, not a replacement for care */}
+        <section className="shell pb-20 lg:pb-28">
+          <Reveal>
+            <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+              <div className="card px-6 py-8 sm:px-8">
+                <p className="eyebrow">Know the limits</p>
+                <h2 className="mt-3 font-display text-2xl font-medium tracking-tight text-forest-deep sm:text-3xl">
+                  Helagi supports you.
+                  <br />
+                  It never replaces care.
+                </h2>
+                <p className="mt-4 text-[15px] leading-7 text-ink/70">
+                  Helagi helps you understand symptoms, prepare for
+                  appointments, and decide how urgent something looks. It does
+                  not diagnose, prescribe, or replace the judgment of a
+                  healthcare professional — and it will tell you so whenever a
+                  situation needs real medical eyes.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-clay/35 bg-clay/[0.07] px-6 py-8 sm:px-8">
+                <div className="flex items-center gap-2.5">
+                  <Icon className="h-5 w-5 text-clay">{icons.phone}</Icon>
+                  <h3 className="text-[15px] font-semibold text-forest-deep">
+                    In an emergency, don&rsquo;t chat — call
+                  </h3>
+                </div>
+                <p className="mt-3 text-[14px] leading-6 text-ink/70">
+                  Call your local emergency number (like 112 or 911) right away
+                  if you or someone near you has:
+                </p>
+                <ul className="mt-3 space-y-2">
+                  {EMERGENCY_SIGNS.map((sign) => (
+                    <li
+                      key={sign}
+                      className="flex items-start gap-2 text-[14px] leading-6 text-ink/80"
+                    >
+                      <Icon className="mt-1 h-4 w-4 shrink-0 text-clay">
+                        {icons.alert}
+                      </Icon>
+                      {sign}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </Reveal>

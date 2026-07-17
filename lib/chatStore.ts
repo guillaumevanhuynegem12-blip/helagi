@@ -38,6 +38,8 @@ function sanitizeMessage(raw: unknown): Message | null {
     id: m.id.slice(0, 64),
     role: m.role,
     content: m.content.slice(0, MAX_MESSAGE_CHARS),
+    // Only the literal true survives sanitization — anything else is dropped.
+    ...(m.hidden === true ? { hidden: true } : {}),
   };
 }
 

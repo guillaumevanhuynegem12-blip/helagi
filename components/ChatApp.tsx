@@ -268,9 +268,10 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
   }, []);
 
   // Core send: streams a reply for the given text. Used by the input box and
-  // by the clickable questionnaire (which sends compiled answers directly).
+  // by the clickable questionnaire (which sends compiled answers directly,
+  // flagged hidden — the answered card already shows them, so no user bubble).
   const sendText = useCallback(
-    async (raw: string) => {
+    async (raw: string, opts?: { hidden?: boolean }) => {
       const text = raw.trim();
       if (!text || isStreaming) return;
 
@@ -288,7 +289,12 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
         setActiveId(convId);
       }
 
-      const userMessage: Message = { id: makeId(), role: "user", content: text };
+      const userMessage: Message = {
+        id: makeId(),
+        role: "user",
+        content: text,
+        ...(opts?.hidden ? { hidden: true } : {}),
+      };
       const assistantId = makeId();
       const assistantMessage: Message = {
         id: assistantId,
@@ -437,6 +443,15 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
     void sendText(text);
   }, [input, sendText]);
 
+  // Send from a questionnaire card: hidden, since the card itself keeps
+  // showing the chosen answers.
+  const sendAnswers = useCallback(
+    (compiled: string) => {
+      void sendText(compiled, { hidden: true });
+    },
+    [sendText],
+  );
+
   const isEmpty = messages.length === 0;
 
   return (
@@ -527,20 +542,24 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
             className="scroll-area flex-1 overflow-y-auto"
           >
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6">
-              {messages.map((message, index) => (
-                <ChatMessage
-                  key={message.id}
-                  message={message}
-                  isStreaming={isStreaming}
-                  isLast={index === messages.length - 1}
-                  onAnswers={sendText}
-                  userReply={
-                    messages[index + 1]?.role === "user"
-                      ? messages[index + 1].content
-                      : undefined
-                  }
-                />
-              ))}
+              {messages.map((message, index) =>
+                // Compiled questionnaire answers stay in the data (the model
+                // and the answered card both need them) but get no bubble.
+                message.hidden ? null : (
+                  <ChatMessage
+                    key={message.id}
+                    message={message}
+                    isStreaming={isStreaming}
+                    isLast={index === messages.length - 1}
+                    onAnswers={sendAnswers}
+                    userReply={
+                      messages[index + 1]?.role === "user"
+                        ? messages[index + 1].content
+                        : undefined
+                    }
+                  />
+                ),
+              )}
 
               {showFinishedPrompt && (
                 <div className="mx-auto mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-2xl border border-forest/15 bg-white/70 px-4 py-3 animate-fade-in">
