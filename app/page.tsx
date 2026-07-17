@@ -198,7 +198,7 @@ export default async function LandingPage() {
     <div id="top" className="flex min-h-dvh flex-col">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-forest/10 bg-cream">
-        <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5">
+        <div className="flex items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-5">
           {/* Plain hash link: scrolls smoothly back to the top of the page */}
           <a
             href="#top"
@@ -227,17 +227,23 @@ export default async function LandingPage() {
             ))}
           </nav>
 
-          <nav className="flex items-center gap-2" aria-label="Account">
+          <nav className="flex items-center gap-1.5 sm:gap-2" aria-label="Account">
             {signedIn ? (
               <Link href="/chat" className="btn btn-primary btn-md">
                 Open Helagi
               </Link>
             ) : (
               <>
-                <Link href="/login" className="btn btn-ghost btn-md">
+                <Link
+                  href="/login"
+                  className="btn btn-ghost px-3 py-2 text-sm sm:px-5 sm:py-2.5"
+                >
                   Log in
                 </Link>
-                <Link href="/register" className="btn btn-primary btn-md">
+                <Link
+                  href="/register"
+                  className="btn btn-primary px-3.5 py-2 text-sm sm:px-5 sm:py-2.5"
+                >
                   Create account
                 </Link>
               </>
@@ -263,14 +269,17 @@ export default async function LandingPage() {
               — and what to do next.
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Link
                 href={signedIn ? "/chat" : "#get-started"}
-                className="btn btn-primary btn-lg"
+                className="btn btn-primary btn-lg w-full sm:w-auto"
               >
                 {signedIn ? "Open Helagi" : "Start using Helagi"}
               </Link>
-              <a href="#how-it-works" className="btn btn-secondary btn-lg">
+              <a
+                href="#how-it-works"
+                className="btn btn-secondary btn-lg w-full sm:w-auto"
+              >
                 See how it works
               </a>
             </div>
@@ -473,7 +482,7 @@ export default async function LandingPage() {
         {/* Final CTA */}
         <section id="get-started" className="shell scroll-mt-24 py-16 lg:py-24">
           <Reveal>
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-forest to-forest-deep px-6 py-14 text-center text-cream sm:px-10 lg:py-16">
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-forest to-forest-deep px-6 py-10 text-center text-cream sm:px-10 sm:py-14 lg:py-16">
               <div
                 aria-hidden="true"
                 className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-sage/15 blur-3xl"
@@ -491,11 +500,11 @@ export default async function LandingPage() {
                     ? "Pick up right where you left off."
                     : "Create a free account to keep your conversations, or try Helagi as a guest — nothing is stored, nothing is tied to your name."}
                 </p>
-                <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                <div className="mx-auto mt-8 flex max-w-xs flex-col gap-3 sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
                   {signedIn ? (
                     <Link
                       href="/chat"
-                      className="btn btn-lg bg-cream text-forest-deep shadow-sm hover:bg-white"
+                      className="btn btn-lg w-full bg-cream text-forest-deep shadow-sm hover:bg-white sm:w-auto"
                     >
                       Open Helagi
                     </Link>
@@ -503,17 +512,17 @@ export default async function LandingPage() {
                     <>
                       <Link
                         href="/register"
-                        className="btn btn-lg bg-cream text-forest-deep shadow-sm hover:bg-white"
+                        className="btn btn-lg w-full bg-cream text-forest-deep shadow-sm hover:bg-white sm:w-auto"
                       >
                         Create free account
                       </Link>
                       <Link
                         href="/login"
-                        className="btn btn-lg border border-cream/30 text-cream hover:bg-white/10"
+                        className="btn btn-lg w-full border border-cream/30 text-cream hover:bg-white/10 sm:w-auto"
                       >
                         Log in
                       </Link>
-                      <GuestButton variant="onDark" className="w-auto" />
+                      <GuestButton variant="onDark" className="w-full sm:w-auto" />
                     </>
                   )}
                 </div>

@@ -30,9 +30,9 @@ const footerLink =
 export default function Footer() {
   return (
     <footer className="border-t border-forest/10 bg-white/60">
-      <div className="shell grid gap-10 py-12 md:grid-cols-[1.5fr_1fr_1fr] lg:gap-16">
-        {/* Brand */}
-        <div>
+      <div className="shell grid grid-cols-2 gap-x-6 gap-y-10 py-12 md:grid-cols-[1.5fr_1fr_1fr] md:gap-10 lg:gap-16">
+        {/* Brand — full width on phones; Product and Legal share the row below */}
+        <div className="col-span-2 md:col-span-1">
           <HelagiLockup />
           <p className="mt-4 max-w-sm text-[13.5px] leading-6 text-ink/60">
             A free health assistant that helps you understand your symptoms in

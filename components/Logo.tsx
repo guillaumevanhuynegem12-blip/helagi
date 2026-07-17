@@ -71,8 +71,10 @@ export function HelagiLockup({
   size?: "md" | "lg";
   className?: string;
 }) {
-  const markSize = size === "lg" ? "h-10 w-10" : "h-7 w-7";
-  const textSize = size === "lg" ? "text-[30px]" : "text-xl";
+  // "lg" scales down a step on phones so tight headers keep room for their
+  // action buttons; from the sm breakpoint up it renders at full size.
+  const markSize = size === "lg" ? "h-8 w-8 sm:h-10 sm:w-10" : "h-7 w-7";
+  const textSize = size === "lg" ? "text-2xl sm:text-[30px]" : "text-xl";
 
   return (
     <div className={`flex items-end gap-2 ${className ?? ""}`}>

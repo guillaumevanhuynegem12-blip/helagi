@@ -55,7 +55,7 @@ export default function ChatInput({
           maxLength={MAX_INPUT_CHARS}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Describe your symptoms or ask a health question…"
+          placeholder="Describe your symptoms…"
           className="max-h-[200px] flex-1 resize-none bg-transparent px-3 py-2 text-[15px] leading-6 text-ink outline-none placeholder:text-ink/40"
         />
         {nearLimit && (

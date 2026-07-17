@@ -70,7 +70,7 @@ export default function EmptyState({
       </div>
 
       {/* Emergency note */}
-      <div className="mt-10 flex max-w-md items-start gap-2.5 rounded-2xl border border-clay/30 bg-clay/[0.06] px-4 py-3 text-left">
+      <div className="mt-10 flex max-w-md items-start gap-2.5 rounded-2xl border border-clay/35 bg-clay/[0.07] px-4 py-3 text-left">
         <svg
           viewBox="0 0 24 24"
           fill="none"
