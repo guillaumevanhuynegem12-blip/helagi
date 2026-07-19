@@ -37,6 +37,18 @@ body {
   }
 }
 
+/* iOS Safari auto-zooms the page when a focused form control's font size is
+   under 16px — and stays zoomed after the keyboard closes. Forcing 16px on
+   touch devices prevents that; !important is needed to beat per-field
+   Tailwind utilities like text-sm and text-[15px]. */
+@media (hover: none) and (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 /* ---------------------------------------------------------------------------
    Design-system components. One source of truth for buttons, cards, and form
    controls so every page uses identical styling instead of ad-hoc variants.
