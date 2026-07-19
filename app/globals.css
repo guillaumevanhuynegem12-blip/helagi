@@ -9,6 +9,9 @@ body {
 
 html {
   scroll-behavior: smooth;
+  /* Buttons/links have their own press feedback (active:scale); the default
+     iOS gray tap flash on top of that reads as jank. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* One flat, calm canvas everywhere — no gradients or tint patches behind

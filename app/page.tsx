@@ -106,7 +106,7 @@ const icons = {
 const HERO_POINTS = [
   "Free during the prototype phase",
   "Private by design",
-  "There day and night",
+  "There day and night, no appointment",
 ];
 
 const STEPS = [
@@ -254,7 +254,7 @@ export default async function LandingPage() {
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="shell grid items-center gap-12 pb-16 pt-12 lg:grid-cols-2 lg:gap-14 lg:pb-24 lg:pt-20">
+        <section className="shell grid items-center gap-10 pb-12 pt-8 sm:gap-12 sm:pb-16 sm:pt-12 lg:grid-cols-2 lg:gap-14 lg:pb-24 lg:pt-20">
           <div className="max-w-xl animate-fade-up">
             <p className="eyebrow">Free AI symptom guidance</p>
             <h1 className="mt-4 font-display text-4xl font-medium leading-[1.08] tracking-tight text-forest-deep sm:text-5xl lg:text-[3.4rem]">
@@ -262,14 +262,14 @@ export default async function LandingPage() {
               <br />
               Let&rsquo;s figure it out — calmly.
             </h1>
-            <p className="mt-6 text-[17px] leading-8 text-ink/70">
+            <p className="mt-5 text-base leading-7 text-ink/70 sm:mt-6 sm:text-[17px] sm:leading-8">
               Searching your symptoms online usually ends in worry. Helagi
               exists so it doesn&rsquo;t have to: describe how you feel in your
               own words and get a calm, clear picture of what might be going on
               — and what to do next.
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center">
               <Link
                 href={signedIn ? "/chat" : "#get-started"}
                 className="btn btn-primary btn-lg w-full sm:w-auto"
@@ -284,7 +284,7 @@ export default async function LandingPage() {
               </a>
             </div>
 
-            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2">
+            <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 sm:mt-8">
               {HERO_POINTS.map((point) => {
                 const isFree = point === "Free during the prototype phase";
                 return (
@@ -308,7 +308,7 @@ export default async function LandingPage() {
         </section>
 
         {/* Always-visible medical disclaimer */}
-        <div className="shell pb-16 lg:pb-20">
+        <div className="shell pb-12 sm:pb-16 lg:pb-20">
           <div className="mx-auto flex max-w-3xl items-start gap-3 rounded-2xl border border-clay/35 bg-clay/[0.07] px-5 py-4">
             <Icon className="mt-0.5 h-5 w-5 shrink-0 text-clay">
               {icons.alert}
@@ -332,19 +332,19 @@ export default async function LandingPage() {
           id="why"
           className="scroll-mt-24 border-y border-forest/10 bg-white/70"
         >
-          <div className="shell py-16 lg:py-20">
+          <div className="shell py-12 sm:py-16 lg:py-20">
             <Reveal className="mx-auto max-w-2xl text-center">
               <p className="eyebrow">Why we exist</p>
               <h2 className="mt-3 font-display text-3xl font-medium tracking-tight text-forest-deep sm:text-4xl">
                 We believe everyone deserves to understand their own health
               </h2>
-              <p className="mt-6 text-[16px] leading-8 text-ink/70">
+              <p className="mt-5 text-[15px] leading-7 text-ink/70 sm:mt-6 sm:text-[16px] sm:leading-8">
                 That belief is where Helagi begins. Today, understanding what
                 is happening in your own body is harder than it should be —
                 clear answers hide behind medical jargon, waiting rooms, and
                 frightening search results, and worry fills the gap.
               </p>
-              <p className="mt-4 text-[16px] leading-8 text-ink/70">
+              <p className="mt-4 text-[15px] leading-7 text-ink/70 sm:text-[16px] sm:leading-8">
                 Our ambition is to close that gap: calm, honest health
                 understanding for everyone, everywhere, at any hour. Every
                 question Helagi asks and every answer it gives exists in
@@ -356,7 +356,7 @@ export default async function LandingPage() {
 
         {/* HOW — the three steps, on the cream base between two bands */}
         <section id="how-it-works" className="scroll-mt-24">
-          <div className="shell py-16 lg:py-20">
+          <div className="shell py-12 sm:py-16 lg:py-20">
             <Reveal className="mx-auto max-w-2xl text-center">
               <p className="eyebrow">How it works</p>
               <h2 className="mt-3 font-display text-3xl font-medium tracking-tight text-forest-deep sm:text-4xl">
@@ -368,7 +368,7 @@ export default async function LandingPage() {
               </p>
             </Reveal>
 
-            <div className="relative mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3 sm:gap-6">
+            <div className="relative mt-8 grid grid-cols-1 gap-6 sm:mt-12 sm:grid-cols-3">
               {/* connector line on desktop */}
               <div
                 aria-hidden="true"
@@ -376,16 +376,19 @@ export default async function LandingPage() {
               />
               {STEPS.map(({ step, title, text }, i) => (
                 <Reveal key={step} delay={i * 120} className="relative">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-forest font-display text-lg text-cream shadow-glow">
+                  {/* Phones: number beside the text. ≥sm: centered column. */}
+                  <div className="flex items-start gap-4 text-left sm:flex-col sm:items-center sm:gap-0 sm:text-center">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-forest font-display text-base text-cream shadow-glow sm:h-12 sm:w-12 sm:text-lg">
                       {step}
                     </div>
-                    <h3 className="mt-5 text-[17px] font-semibold text-forest-deep">
-                      {title}
-                    </h3>
-                    <p className="mt-2 max-w-xs text-[14px] leading-6 text-ink/65">
-                      {text}
-                    </p>
+                    <div className="sm:flex sm:flex-col sm:items-center">
+                      <h3 className="text-[16px] font-semibold text-forest-deep sm:mt-5 sm:text-[17px]">
+                        {title}
+                      </h3>
+                      <p className="mt-1 max-w-xs text-[14px] leading-6 text-ink/65 sm:mt-2">
+                        {text}
+                      </p>
+                    </div>
                   </div>
                 </Reveal>
               ))}
@@ -396,8 +399,8 @@ export default async function LandingPage() {
         {/* HOW — the promises behind every answer. Same dark "poster card"
             treatment as the final CTA (one shared gradient + glow recipe). */}
         <section id="trust" className="scroll-mt-24">
-          <div className="shell pb-16 lg:pb-24">
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-forest to-forest-deep px-6 py-12 text-cream sm:px-10 lg:px-14 lg:py-16">
+          <div className="shell pb-12 sm:pb-16 lg:pb-24">
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-forest to-forest-deep px-5 py-10 text-cream sm:px-10 sm:py-12 lg:px-14 lg:py-16">
               <div
                 aria-hidden="true"
                 className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-sage/15 blur-3xl"
@@ -420,7 +423,7 @@ export default async function LandingPage() {
                   </p>
                 </Reveal>
 
-                <div className="mt-12 grid grid-cols-1 gap-x-10 gap-y-8 sm:grid-cols-2">
+                <div className="mt-8 grid grid-cols-1 gap-x-10 gap-y-6 sm:mt-12 sm:grid-cols-2 sm:gap-y-8">
                   {TRUST_POINTS.map(({ icon, title, text }, i) => (
                     <Reveal key={title} delay={(i % 2) * 100}>
                       <div className="flex gap-4">
@@ -447,7 +450,7 @@ export default async function LandingPage() {
           id="what-you-get"
           className="scroll-mt-24 border-y border-forest/10 bg-white/70"
         >
-          <div className="shell py-16 lg:py-20">
+          <div className="shell py-12 sm:py-16 lg:py-20">
             <Reveal className="mx-auto max-w-2xl text-center">
               <p className="eyebrow">What you get</p>
               <h2 className="mt-3 font-display text-3xl font-medium tracking-tight text-forest-deep sm:text-4xl">
@@ -459,19 +462,22 @@ export default async function LandingPage() {
               </p>
             </Reveal>
 
-            <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-8 grid grid-cols-1 gap-3 sm:mt-12 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
               {FEATURES.map(({ icon, title, text }, i) => (
                 <Reveal key={title} delay={(i % 3) * 100}>
-                  <div className="card h-full px-6 py-6 transition duration-200 hover:-translate-y-0.5 hover:shadow-lift">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-forest/[0.08] text-forest">
+                  {/* Phones: compact icon-beside-text row. ≥sm: card column. */}
+                  <div className="card flex h-full items-start gap-4 px-4 py-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-lift sm:block sm:px-6 sm:py-6">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-forest/[0.08] text-forest">
                       <Icon>{icon}</Icon>
                     </div>
-                    <h3 className="mt-4 text-[15px] font-semibold text-forest-deep">
-                      {title}
-                    </h3>
-                    <p className="mt-1.5 text-[13.5px] leading-6 text-ink/65">
-                      {text}
-                    </p>
+                    <div>
+                      <h3 className="text-[15px] font-semibold text-forest-deep sm:mt-4">
+                        {title}
+                      </h3>
+                      <p className="mt-1 text-[13.5px] leading-6 text-ink/65 sm:mt-1.5">
+                        {text}
+                      </p>
+                    </div>
                   </div>
                 </Reveal>
               ))}
@@ -480,7 +486,7 @@ export default async function LandingPage() {
         </section>
 
         {/* Final CTA */}
-        <section id="get-started" className="shell scroll-mt-24 py-16 lg:py-24">
+        <section id="get-started" className="shell scroll-mt-24 py-12 sm:py-16 lg:py-24">
           <Reveal>
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-forest to-forest-deep px-6 py-10 text-center text-cream sm:px-10 sm:py-14 lg:py-16">
               <div
@@ -538,10 +544,10 @@ export default async function LandingPage() {
         </section>
 
         {/* Support, not a replacement for care */}
-        <section className="shell pb-20 lg:pb-28">
+        <section className="shell pb-14 sm:pb-20 lg:pb-28">
           <Reveal>
             <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-              <div className="card px-6 py-8 sm:px-8">
+              <div className="card px-5 py-6 sm:px-8 sm:py-8">
                 <p className="eyebrow">Know the limits</p>
                 <h2 className="mt-3 font-display text-2xl font-medium tracking-tight text-forest-deep sm:text-3xl">
                   Helagi supports you.
@@ -557,7 +563,7 @@ export default async function LandingPage() {
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-clay/35 bg-clay/[0.07] px-6 py-8 sm:px-8">
+              <div className="rounded-2xl border border-clay/35 bg-clay/[0.07] px-5 py-6 sm:px-8 sm:py-8">
                 <div className="flex items-center gap-2.5">
                   <Icon className="h-5 w-5 text-clay">{icons.phone}</Icon>
                   <h3 className="text-[15px] font-semibold text-forest-deep">

@@ -27,33 +27,40 @@ export default function EmptyState({
   onSelectPrompt: (prompt: string) => void;
 }) {
   return (
-    <div className="flex min-h-full flex-col items-center justify-center px-4 py-10 text-center">
+    <div className="flex min-h-full flex-col items-center justify-center px-4 py-6 text-center sm:py-10">
       <div className="animate-fade-up">
-        <HelagiMark className="mx-auto mb-5 h-16 w-16" />
-        <h1 className="font-display text-3xl font-medium tracking-tight text-forest-deep sm:text-4xl">
+        <HelagiMark className="mx-auto mb-4 h-12 w-12 sm:mb-5 sm:h-16 sm:w-16" />
+        <h1 className="font-display text-[26px] font-medium leading-tight tracking-tight text-forest-deep sm:text-3xl md:text-4xl">
           Not feeling well? Let&rsquo;s figure it out.
         </h1>
-        <p className="mx-auto mt-3 max-w-xl text-[15px] leading-7 text-ink/60">
+        <p className="mx-auto mt-2 max-w-xl text-[14px] leading-6 text-ink/60 sm:mt-3 sm:text-[15px] sm:leading-7">
           Describe your symptoms below and Helagi will help you understand what
           might be going on — and what to do next.
         </p>
       </div>
 
-      {/* How it works */}
-      <div className="mt-10 grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
+      {/* How it works — number-beside-text rows on phones, cards on ≥sm */}
+      <div className="mt-6 grid w-full max-w-2xl grid-cols-1 gap-2.5 sm:mt-10 sm:grid-cols-3 sm:gap-3">
         {STEPS.map(({ step, title, text }) => (
-          <div key={step} className="card px-4 py-4 text-left">
-            <div className="mb-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-forest text-sm font-semibold text-cream">
+          <div
+            key={step}
+            className="card flex items-start gap-3 px-4 py-3 text-left sm:block sm:py-4"
+          >
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-forest text-sm font-semibold text-cream sm:mb-2.5">
               {step}
             </div>
-            <p className="text-sm font-semibold text-forest-deep">{title}</p>
-            <p className="mt-1 text-[13px] leading-5 text-ink/60">{text}</p>
+            <div>
+              <p className="text-sm font-semibold text-forest-deep">{title}</p>
+              <p className="mt-0.5 text-[13px] leading-5 text-ink/60 sm:mt-1">
+                {text}
+              </p>
+            </div>
           </div>
         ))}
       </div>
 
       {/* Example prompts */}
-      <p className="mt-10 text-sm font-medium text-ink/70">
+      <p className="mt-6 text-sm font-medium text-ink/70 sm:mt-10">
         Not sure how to start? Tap one of these:
       </p>
       <div className="mt-3 grid w-full max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
@@ -62,7 +69,7 @@ export default function EmptyState({
             key={prompt}
             type="button"
             onClick={() => onSelectPrompt(prompt)}
-            className="rounded-2xl border border-forest/15 bg-white px-4 py-3 text-left text-sm leading-6 text-ink/80 shadow-soft transition duration-200 hover:-translate-y-0.5 hover:border-forest/30 hover:shadow-lift focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+            className="rounded-2xl border border-forest/15 bg-white px-4 py-2.5 text-left text-sm leading-6 text-ink/80 shadow-soft transition duration-200 hover:-translate-y-0.5 hover:border-forest/30 hover:shadow-lift focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest sm:py-3"
           >
             &ldquo;{prompt}&rdquo;
           </button>
@@ -70,7 +77,7 @@ export default function EmptyState({
       </div>
 
       {/* Emergency note */}
-      <div className="mt-10 flex max-w-md items-start gap-2.5 rounded-2xl border border-clay/35 bg-clay/[0.07] px-4 py-3 text-left">
+      <div className="mt-6 flex max-w-md items-start gap-2.5 rounded-2xl border border-clay/35 bg-clay/[0.07] px-4 py-3 text-left sm:mt-10">
         <svg
           viewBox="0 0 24 24"
           fill="none"

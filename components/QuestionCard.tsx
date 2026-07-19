@@ -3,6 +3,13 @@
 import { useState } from "react";
 import type { ParsedQuestion } from "@/lib/parseQuestions";
 
+// Model-written options sometimes arrive lowercase ("pressure" next to
+// "Dull"); display them consistently. The raw option text is still what gets
+// sent, so the model sees its own wording back.
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 // Clickable questionnaire rendered inside the assistant bubble: each question
 // with its option buttons right next to it (plus a small text field for
 // free-text ones). Compiles the answers into a single numbered message that
@@ -95,7 +102,7 @@ export default function QuestionCard({
                         : "border-forest/25 bg-white text-forest enabled:hover:border-forest/45 enabled:hover:bg-cream-muted disabled:opacity-50"
                     }`}
                   >
-                    {opt}
+                    {capitalize(opt)}
                   </button>
                 );
               })}

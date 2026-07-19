@@ -18,6 +18,7 @@ import type { Conversation, Message } from "@/lib/types";
 import { NEW_MESSAGE_MARKER, SESSION_END_MARKER } from "@/lib/constants";
 import { streamChat } from "@/lib/streamChat";
 import { track } from "@/lib/analytics";
+import { CONSENT_CHANGED_EVENT, readConsent } from "@/lib/consent";
 import ChatMessage from "@/components/ChatMessage";
 import ChatInput from "@/components/ChatInput";
 import EmptyState from "@/components/EmptyState";
@@ -82,14 +83,22 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
 
   useEffect(() => {
     track("chat_opened");
-    try {
-      if (window.localStorage.getItem(PROTOTYPE_NOTICE_KEY) !== "1") {
-        setShowNotice(true);
+    // The welcome waits until the cookie banner is out of the way — on a
+    // phone the two would otherwise stack on top of each other. Consent
+    // decided (now or via the banner's CONSENT_CHANGED_EVENT) → show it.
+    const maybeShowNotice = () => {
+      let seen = false;
+      try {
+        seen = window.localStorage.getItem(PROTOTYPE_NOTICE_KEY) === "1";
+      } catch {
+        // Storage unavailable (private mode) — treat as not seen.
       }
-    } catch {
-      // Storage unavailable (private mode) — just show the welcome.
-      setShowNotice(true);
-    }
+      if (!seen && readConsent() !== null) setShowNotice(true);
+    };
+    maybeShowNotice();
+    window.addEventListener(CONSENT_CHANGED_EVENT, maybeShowNotice);
+    return () =>
+      window.removeEventListener(CONSENT_CHANGED_EVENT, maybeShowNotice);
   }, []);
 
   // Accounts: fetch the private server-side history once on mount.

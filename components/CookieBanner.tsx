@@ -108,18 +108,27 @@ export default function CookieBanner() {
           className="fixed inset-x-0 bottom-0 z-40 p-3 sm:p-4"
         >
           <div className="mx-auto max-w-3xl animate-fade-up rounded-2xl border border-forest/15 bg-white p-4 shadow-lift sm:p-5">
-            <p className="text-sm leading-6 text-ink">
+            {/* Phones get a one-sentence version; the full explanation is a
+                tap away in the Cookie Policy or "Manage preferences". */}
+            <p className="text-[13px] leading-5 text-ink sm:text-sm sm:leading-6">
               <span className="font-semibold text-forest-deep">Cookies at Helagi.</span>{" "}
-              We use strictly necessary cookies to make login and security work.
-              With your permission we&rsquo;d also like to use first-party
-              analytics to understand how Helagi is used — never the content of
-              your conversations. Details in our{" "}
+              <span className="sm:hidden">
+                Necessary cookies keep login working; optional first-party
+                analytics help us improve — never what you write in the chat.
+              </span>
+              <span className="hidden sm:inline">
+                We use strictly necessary cookies to make login and security work.
+                With your permission we&rsquo;d also like to use first-party
+                analytics to understand how Helagi is used — never the content of
+                your conversations.
+              </span>{" "}
+              Details in our{" "}
               <Link href="/legal/cookies" className="text-forest underline underline-offset-2">
                 Cookie Policy
               </Link>
               .
             </p>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="mt-3 grid grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap">
               <button
                 type="button"
                 onClick={() => decide(true, true)}
@@ -132,12 +141,13 @@ export default function CookieBanner() {
                 onClick={() => decide(false, false)}
                 className="btn btn-secondary btn-sm"
               >
-                Reject optional cookies
+                <span className="sm:hidden">Reject optional</span>
+                <span className="hidden sm:inline">Reject optional cookies</span>
               </button>
               <button
                 type="button"
                 onClick={() => setShowModal(true)}
-                className="btn btn-ghost btn-sm underline underline-offset-2"
+                className="btn btn-ghost btn-sm col-span-2 underline underline-offset-2 sm:col-auto"
               >
                 Manage preferences
               </button>
