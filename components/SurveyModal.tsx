@@ -5,8 +5,10 @@
 // - they ask for the doctor summary before having answered it (the summary
 //   unlocks right after submitting — the thank-you screen offers to create it).
 //
-// Four questions, under a minute: overall rating, "did you get your answer",
-// and two optional free-text fields (what was good / what could be better).
+// Six questions, under a minute: what they came for, overall rating, "did you
+// get your answer", whether they'd use Helagi again, and two optional
+// free-text fields (what was good / what could be better). The four choice
+// questions are single taps; only the free text takes typing.
 
 import { useState } from "react";
 import type { Message } from "@/lib/types";
@@ -16,6 +18,15 @@ import { track } from "@/lib/analytics";
 export type SurveyReason = "finished" | "summary";
 
 const RATING_LABELS = ["Poor", "Not great", "Okay", "Good", "Excellent"];
+
+const PURPOSE_OPTIONS = [
+  ["symptoms", "Check symptoms"],
+  ["condition", "Understand a condition"],
+  ["doctor_visit", "Prepare for a doctor visit"],
+  ["general", "General health question"],
+] as const;
+
+type Purpose = (typeof PURPOSE_OPTIONS)[number][0];
 
 export default function SurveyModal({
   reason,
@@ -30,8 +41,10 @@ export default function SurveyModal({
   onSubmitted: () => void;
   onClose: () => void;
 }) {
+  const [purpose, setPurpose] = useState<Purpose | null>(null);
   const [rating, setRating] = useState<number | null>(null);
   const [answered, setAnswered] = useState<"yes" | "partly" | "no" | null>(null);
+  const [again, setAgain] = useState<"yes" | "maybe" | "no" | null>(null);
   const [liked, setLiked] = useState("");
   const [improve, setImprove] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -43,12 +56,20 @@ export default function SurveyModal({
     if (busy) return;
     setError(null);
 
+    if (purpose === null) {
+      setError("Please tell us what you used Helagi for today.");
+      return;
+    }
     if (rating === null) {
       setError("Please pick a rating first.");
       return;
     }
     if (answered === null) {
       setError("Please tell us whether you got the answer you needed.");
+      return;
+    }
+    if (again === null) {
+      setError("Please tell us whether you would use Helagi again.");
       return;
     }
 
@@ -58,10 +79,16 @@ export default function SurveyModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          purpose,
           rating,
           answered,
+          again,
           liked: liked.trim(),
           improve: improve.trim(),
+          // Analysis context, no message content: why the survey appeared and
+          // how long the conversation was.
+          reason,
+          messageCount: messages.length,
         }),
       });
       const data = await res.json().catch(() => null);
@@ -70,7 +97,7 @@ export default function SurveyModal({
         setBusy(false);
         return;
       }
-      track("survey_submitted", { rating, answered, reason });
+      track("survey_submitted", { rating, answered, purpose, again, reason });
       onSubmitted();
       setDone(true);
     } catch {
@@ -156,6 +183,25 @@ export default function SurveyModal({
             )}
 
             <div>
+              <span className={labelClasses}>
+                What did you use Helagi for today?
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {PURPOSE_OPTIONS.map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setPurpose(value)}
+                    aria-pressed={purpose === value}
+                    className={chipClasses(purpose === value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
               <span className={labelClasses}>How was Helagi today?</span>
               <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Rating from 1 to 5">
                 {[1, 2, 3, 4, 5].map((value) => (
@@ -207,6 +253,31 @@ export default function SurveyModal({
             </div>
 
             <div>
+              <span className={labelClasses}>
+                Would you use Helagi again?
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    ["yes", "Yes"],
+                    ["maybe", "Maybe"],
+                    ["no", "No"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setAgain(value)}
+                    aria-pressed={again === value}
+                    className={chipClasses(again === value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
               <label htmlFor="survey-liked" className={labelClasses}>
                 What did you like? <span className="font-normal text-ink/45">(optional)</span>
               </label>
@@ -223,7 +294,9 @@ export default function SurveyModal({
 
             <div>
               <label htmlFor="survey-improve" className={labelClasses}>
-                What could be better?{" "}
+                {answered === "no" || answered === "partly"
+                  ? "What was missing from the answer?"
+                  : "What could be better?"}{" "}
                 <span className="font-normal text-ink/45">(optional)</span>
               </label>
               <textarea
@@ -232,7 +305,11 @@ export default function SurveyModal({
                 onChange={(e) => setImprove(e.target.value)}
                 maxLength={500}
                 rows={2}
-                placeholder="Anything confusing, missing, or broken?"
+                placeholder={
+                  answered === "no" || answered === "partly"
+                    ? "What were you hoping to find out?"
+                    : "Anything confusing, missing, or broken?"
+                }
                 className="input-field resize-none"
               />
               <p className="mt-1.5 text-xs leading-5 text-ink/45">
