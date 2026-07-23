@@ -18,7 +18,11 @@ import type { Conversation, Message } from "@/lib/types";
 import { NEW_MESSAGE_MARKER, SESSION_END_MARKER } from "@/lib/constants";
 import { streamChat } from "@/lib/streamChat";
 import { track } from "@/lib/analytics";
-import { CONSENT_CHANGED_EVENT, readConsent } from "@/lib/consent";
+import {
+  CONSENT_CHANGED_EVENT,
+  readConsent,
+  requireTermsAcceptance,
+} from "@/lib/consent";
 import ChatMessage from "@/components/ChatMessage";
 import ChatInput from "@/components/ChatInput";
 import EmptyState from "@/components/EmptyState";
@@ -283,6 +287,11 @@ export default function ChatApp({ identity }: { identity: SidebarIdentity }) {
     async (raw: string, opts?: { hidden?: boolean }) => {
       const text = raw.trim();
       if (!text || isStreaming) return;
+
+      // Backstop terms gate: sessions created before the gate existed (or a
+      // deep link straight to /chat) still can't message without accepting
+      // the Terms of Use. /api/chat enforces the same rule server-side.
+      if (!(await requireTermsAcceptance())) return;
 
       // Resolve the conversation we're writing to (create one if this is a new chat).
       const isNewConversation = !activeId;

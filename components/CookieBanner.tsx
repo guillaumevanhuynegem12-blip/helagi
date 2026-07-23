@@ -4,7 +4,13 @@
 // app/layout.tsx.
 //
 // - Banner shows on first visit (no consent cookie yet) with Accept all /
-//   Reject optional / Manage preferences.
+//   Reject optional / Manage preferences. It also doubles as the Terms of
+//   Use acceptance point: EVERY choice (accept all, reject optional, save
+//   preferences) records agreement to the terms, so terms acceptance never
+//   depends on the cookie choice — GDPR consent must stay freely given, so
+//   the two must not be bundled into one button.
+// - The banner re-shows when the stored acceptance is missing or for an
+//   older TERMS_VERSION (see lib/consent.ts).
 // - The footer's "Cookie settings" link (and anything else) can reopen the
 //   modal later by dispatching OPEN_COOKIE_SETTINGS_EVENT, so consent can be
 //   changed or withdrawn at any time.
@@ -14,7 +20,9 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  CONSENT_UI_CLOSED_EVENT,
   OPEN_COOKIE_SETTINGS_EVENT,
+  hasAcceptedTerms,
   readConsent,
   writeConsent,
 } from "@/lib/consent";
@@ -52,13 +60,17 @@ export default function CookieBanner() {
   const [preferences, setPreferences] = useState(false);
 
   // Read the cookie only after mount — during SSR there is no document.
+  // The banner shows when there is no cookie choice yet OR the visitor has
+  // not (re-)accepted the current terms version — existing cookie
+  // preferences are kept and pre-filled either way.
   useEffect(() => {
     const existing = readConsent();
-    if (!existing) {
-      setShowBanner(true);
-    } else {
+    if (existing) {
       setAnalytics(existing.analytics);
       setPreferences(existing.preferences);
+    }
+    if (!existing || !hasAcceptedTerms()) {
+      setShowBanner(true);
     }
   }, []);
 
@@ -87,15 +99,24 @@ export default function CookieBanner() {
     });
   }, []);
 
+  // Closes the modal WITHOUT a decision and tells any pending
+  // requireTermsAcceptance() gate to give up (it then blocks the action that
+  // opened the modal). The banner re-shows if the terms are still unaccepted.
+  const dismissModal = useCallback(() => {
+    setShowModal(false);
+    if (!hasAcceptedTerms()) setShowBanner(true);
+    window.dispatchEvent(new Event(CONSENT_UI_CLOSED_EVENT));
+  }, []);
+
   // Esc closes the modal without saving.
   useEffect(() => {
     if (!showModal) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowModal(false);
+      if (e.key === "Escape") dismissModal();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [showModal]);
+  }, [showModal, dismissModal]);
 
   if (!showBanner && !showModal) return null;
 
@@ -104,7 +125,7 @@ export default function CookieBanner() {
       {showBanner && !showModal && (
         <div
           role="region"
-          aria-label="Cookie consent"
+          aria-label="Cookie consent and terms acceptance"
           className="fixed inset-x-0 bottom-0 z-40 p-3 sm:p-4"
         >
           <div className="mx-auto max-w-3xl animate-fade-up rounded-2xl border border-forest/15 bg-white p-4 shadow-lift sm:p-5">
@@ -125,6 +146,28 @@ export default function CookieBanner() {
               Details in our{" "}
               <Link href="/legal/cookies" className="text-forest underline underline-offset-2">
                 Cookie Policy
+              </Link>
+              .
+            </p>
+            {/* Terms acceptance applies to EVERY button below, so agreeing to
+                the terms never depends on the cookie choice (no consent
+                bundling). This sentence must stay visible on all screen
+                sizes — it is the legally operative clickwrap text. */}
+            <p className="mt-2 text-[13px] leading-5 text-ink/70 sm:text-sm sm:leading-6">
+              Whichever you choose, by continuing you agree to our{" "}
+              <Link href="/legal/terms" className="text-forest underline underline-offset-2">
+                Terms of Use
+              </Link>{" "}
+              and confirm you have read our{" "}
+              <Link href="/legal/privacy" className="text-forest underline underline-offset-2">
+                Privacy Policy
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/legal/medical-disclaimer"
+                className="text-forest underline underline-offset-2"
+              >
+                Medical Disclaimer
               </Link>
               .
             </p>
@@ -161,7 +204,7 @@ export default function CookieBanner() {
           {/* Backdrop click closes without saving */}
           <div
             className="absolute inset-0"
-            onClick={() => setShowModal(false)}
+            onClick={dismissModal}
             aria-hidden="true"
           />
           <div
@@ -224,10 +267,31 @@ export default function CookieBanner() {
               })}
             </div>
 
-            <div className="mt-4 flex flex-wrap justify-end gap-2">
+            {/* The modal is also reachable before any decision ("Manage
+                preferences"), so saving here is an acceptance path too and
+                needs the same clickwrap text as the banner. */}
+            <p className="mt-4 text-[13px] leading-5 text-ink/60">
+              By saving, you agree to our{" "}
+              <Link href="/legal/terms" className="text-forest underline underline-offset-2">
+                Terms of Use
+              </Link>{" "}
+              and confirm you have read our{" "}
+              <Link href="/legal/privacy" className="text-forest underline underline-offset-2">
+                Privacy Policy
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/legal/medical-disclaimer"
+                className="text-forest underline underline-offset-2"
+              >
+                Medical Disclaimer
+              </Link>
+              .
+            </p>
+            <div className="mt-3 flex flex-wrap justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setShowModal(false)}
+                onClick={dismissModal}
                 className="btn btn-ghost btn-sm text-ink/60 hover:text-ink"
               >
                 Cancel

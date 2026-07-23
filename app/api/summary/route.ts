@@ -1,6 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
-import { isSameOrigin } from "@/lib/security";
+import {
+  TERMS_REQUIRED_ERROR,
+  getTermsAcceptance,
+  isSameOrigin,
+} from "@/lib/security";
 
 // Generates the printable "Make PDF" document (doctor handover, exercise plan,
 // or health plan) from the conversation. Shares the same per-IP rate limits as
@@ -77,6 +81,12 @@ export async function POST(req: Request) {
       { error: "Cross-origin requests are not allowed." },
       { status: 403 },
     );
+  }
+
+  // Terms gate: same server-side backstop as /api/chat — the summary also
+  // sends conversation content to the AI provider.
+  if (!getTermsAcceptance(req)) {
+    return Response.json({ error: TERMS_REQUIRED_ERROR }, { status: 403 });
   }
 
   const verdict = await checkRateLimit(getClientIp(req));

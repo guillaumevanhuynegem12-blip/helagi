@@ -41,7 +41,14 @@ export default function ChatInput({
   const nearLimit = remaining <= 200;
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 pb-4">
+    <div className="relative">
+      {/* Soft fade so scrolling messages dissolve into the background
+          instead of clipping hard against the composer. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-full h-10 bg-gradient-to-t from-cream to-transparent"
+      />
+      <div className="mx-auto w-full max-w-3xl px-4 pb-4">
       <div className="flex items-end gap-2 rounded-[1.6rem] border border-forest/15 bg-white p-2 shadow-lift transition focus-within:border-forest/40 focus-within:ring-2 focus-within:ring-forest/15">
         <label htmlFor="chat-input" className="sr-only">
           Describe your symptoms or ask a health question
@@ -89,9 +96,10 @@ export default function ChatInput({
           </svg>
         </button>
       </div>
-      <p className="mt-2 text-center text-xs leading-5 text-ink/40">
-        {DISCLAIMER}
-      </p>
+        <p className="mt-2 text-center text-xs leading-5 text-ink/40">
+          {DISCLAIMER}
+        </p>
+      </div>
     </div>
   );
 }

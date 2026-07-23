@@ -8,6 +8,7 @@ import {
   getGoogleRedirectUri,
   isGoogleConfigured,
 } from "@/lib/googleAuth";
+import { getTermsAcceptance } from "@/lib/security";
 
 // Step 2 of "Sign in with Google": Google sends the visitor back here with a
 // one-time code. Verify the state cookie (CSRF), exchange the code for the
@@ -38,10 +39,18 @@ export async function GET(req: Request) {
   const verdict = await checkAuthRateLimit(getClientIp(req));
   if (!verdict.ok) return fail();
 
+  // Terms gate: the start route already required acceptance, but the session
+  // is only created HERE — re-check, and copy the acceptance record onto a
+  // newly created account as durable proof.
+  const terms = getTermsAcceptance(req);
+  if (!terms) {
+    return Response.redirect(new URL("/login?error=terms", base), 302);
+  }
+
   try {
     const profile = await exchangeGoogleCode(code, getGoogleRedirectUri(req));
     if (!profile) return fail();
-    const user = await findOrCreateGoogleUser(profile.email, profile.sub);
+    const user = await findOrCreateGoogleUser(profile.email, profile.sub, terms);
     await createSession(user);
     return Response.redirect(new URL("/chat", base), 302);
   } catch (err) {

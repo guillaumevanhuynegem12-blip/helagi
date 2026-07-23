@@ -5,6 +5,7 @@
 
 import { useState } from "react";
 import { track } from "@/lib/analytics";
+import { requireTermsAcceptance } from "@/lib/consent";
 
 export default function GuestButton({
   className,
@@ -19,8 +20,14 @@ export default function GuestButton({
 
   async function startAsGuest() {
     if (busy) return;
-    setBusy(true);
     setError(null);
+    // Hard gate: no session without accepting the Terms of Use first. The
+    // server re-checks this in /api/auth/guest.
+    if (!(await requireTermsAcceptance())) {
+      setError("Please accept the Terms of Use to continue.");
+      return;
+    }
+    setBusy(true);
     try {
       const res = await fetch("/api/auth/guest", { method: "POST" });
       if (!res.ok) {

@@ -54,6 +54,11 @@ export interface User {
   // with Google at least once.
   googleId?: string;
   createdAt: string;
+  // Durable proof of Terms of Use acceptance, copied from the consent cookie
+  // at account creation (see lib/security.ts getTermsAcceptance). Survives
+  // cleared cookies; absent only on accounts predating the terms gate.
+  termsAcceptedAt?: string;
+  termsVersion?: string;
 }
 
 interface SessionData {
@@ -257,6 +262,7 @@ export async function resendSignupCode(
 export async function confirmSignup(
   email: string,
   code: string,
+  terms?: { acceptedAt: string; version: string },
 ): Promise<{ user: User } | { error: string; expired?: boolean }> {
   const key = signupKey(email);
   const pending = await storeGet<PendingSignup>(key);
@@ -292,6 +298,9 @@ export async function confirmSignup(
     email: pending.email,
     passwordHash: pending.passwordHash,
     createdAt: new Date().toISOString(),
+    ...(terms
+      ? { termsAcceptedAt: terms.acceptedAt, termsVersion: terms.version }
+      : {}),
   };
   // SET NX is atomic, so a simultaneous signup (e.g. via Google) can't be
   // overwritten.
@@ -389,6 +398,7 @@ export async function verifyCredentials(
 export async function findOrCreateGoogleUser(
   email: string,
   googleId: string,
+  terms?: { acceptedAt: string; version: string },
 ): Promise<User> {
   const normalized = email.trim().toLowerCase();
   const existing = await storeGet<User>(userKey(normalized));
@@ -405,6 +415,9 @@ export async function findOrCreateGoogleUser(
     email: normalized,
     googleId,
     createdAt: new Date().toISOString(),
+    ...(terms
+      ? { termsAcceptedAt: terms.acceptedAt, termsVersion: terms.version }
+      : {}),
   };
   const created = await storeSet(userKey(normalized), user, {
     ifNotExists: true, // accounts are permanent — no TTL

@@ -52,6 +52,15 @@ export default async function LoginPage({
               log in with your email and password.
             </p>
           )}
+          {error === "terms" && (
+            <p
+              role="alert"
+              className="mb-4 rounded-xl border border-clay/40 bg-clay/10 px-3.5 py-2.5 text-sm leading-6 text-ink"
+            >
+              Please accept the Terms of Use in the banner below before
+              signing in.
+            </p>
+          )}
           <AuthForm mode="login" />
           {isGoogleConfigured() && (
             <>

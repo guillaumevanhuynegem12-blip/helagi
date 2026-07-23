@@ -16,6 +16,7 @@ import {
   PASSWORD_MIN_LENGTH,
 } from "@/lib/validation";
 import { track } from "@/lib/analytics";
+import { requireTermsAcceptance } from "@/lib/consent";
 
 const inputClasses = "input-field";
 
@@ -62,6 +63,13 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
     }
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
+
+    // Hard gate: neither login nor registration proceeds until the Terms of
+    // Use are accepted. The auth API routes re-check this server-side.
+    if (!(await requireTermsAcceptance())) {
+      setServerError("Please accept the Terms of Use to continue.");
+      return;
+    }
 
     setBusy(true);
     try {

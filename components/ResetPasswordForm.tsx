@@ -7,6 +7,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { validatePassword, PASSWORD_MIN_LENGTH } from "@/lib/validation";
 import { track } from "@/lib/analytics";
+import { requireTermsAcceptance } from "@/lib/consent";
 
 export default function ResetPasswordForm({ token }: { token: string }) {
   const [password, setPassword] = useState("");
@@ -29,6 +30,13 @@ export default function ResetPasswordForm({ token }: { token: string }) {
     if (confirm !== password) errors.confirm = "The passwords don't match.";
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
+
+    // Completing a reset logs the visitor in, so it's terms-gated like login
+    // (the API route re-checks server-side).
+    if (!(await requireTermsAcceptance())) {
+      setServerError("Please accept the Terms of Use to continue.");
+      return;
+    }
 
     setBusy(true);
     try {

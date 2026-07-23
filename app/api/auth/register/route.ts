@@ -2,7 +2,11 @@ import { beginSignup } from "@/lib/auth";
 import { sendEmail, verificationCodeEmail } from "@/lib/email";
 import { validateEmail, validatePassword } from "@/lib/validation";
 import { checkAuthRateLimit, getClientIp } from "@/lib/rateLimit";
-import { isSameOrigin } from "@/lib/security";
+import {
+  TERMS_REQUIRED_ERROR,
+  getTermsAcceptance,
+  isSameOrigin,
+} from "@/lib/security";
 
 // Step 1 of registration: validate email + password, then email a 6-digit
 // verification code. No account (and no session) exists until the visitor
@@ -17,6 +21,12 @@ export async function POST(req: Request) {
       { error: "Cross-origin requests are not allowed." },
       { status: 403 },
     );
+  }
+
+  // Server-side terms gate: registration requires accepting the Terms of Use
+  // first (the client gates too, but can't be trusted).
+  if (!getTermsAcceptance(req)) {
+    return Response.json({ error: TERMS_REQUIRED_ERROR }, { status: 403 });
   }
 
   const verdict = await checkAuthRateLimit(getClientIp(req));

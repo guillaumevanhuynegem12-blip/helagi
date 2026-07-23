@@ -1,6 +1,10 @@
 import { verifyCredentials, createSession } from "@/lib/auth";
 import { checkAuthRateLimit, getClientIp } from "@/lib/rateLimit";
-import { isSameOrigin } from "@/lib/security";
+import {
+  TERMS_REQUIRED_ERROR,
+  getTermsAcceptance,
+  isSameOrigin,
+} from "@/lib/security";
 
 // Login. Deliberately answers wrong-email and wrong-password identically
 // ("Invalid email or password.") so the endpoint can't be used to probe which
@@ -15,6 +19,12 @@ export async function POST(req: Request) {
       { error: "Cross-origin requests are not allowed." },
       { status: 403 },
     );
+  }
+
+  // Server-side terms gate: no login without accepting the Terms of Use
+  // first (the client gates too, but can't be trusted).
+  if (!getTermsAcceptance(req)) {
+    return Response.json({ error: TERMS_REQUIRED_ERROR }, { status: 403 });
   }
 
   const verdict = await checkAuthRateLimit(getClientIp(req));
