@@ -1,6 +1,11 @@
-// "Continue with Google" button. A plain link — the whole OAuth flow is
-// server-side redirects (/api/auth/google), so no client JS is needed.
+"use client";
+
+// "Continue with Google" button. The OAuth flow itself is server-side
+// redirects (/api/auth/google); the click is intercepted only to enforce the
+// Terms of Use gate before leaving for Google (the server re-checks too).
 // Render it only when Google sign-in is configured (lib/googleAuth.ts).
+
+import { requireTermsAcceptance } from "@/lib/consent";
 
 function GoogleG({ className }: { className?: string }) {
   return (
@@ -26,8 +31,19 @@ function GoogleG({ className }: { className?: string }) {
 }
 
 export default function GoogleButton() {
+  async function onClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    e.preventDefault();
+    if (await requireTermsAcceptance()) {
+      window.location.href = "/api/auth/google";
+    }
+  }
+
   return (
-    <a href="/api/auth/google" className="btn btn-secondary btn-md w-full">
+    <a
+      href="/api/auth/google"
+      onClick={onClick}
+      className="btn btn-secondary btn-md w-full"
+    >
       <GoogleG className="h-[18px] w-[18px]" />
       Continue with Google
     </a>

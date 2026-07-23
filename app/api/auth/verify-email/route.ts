@@ -1,6 +1,10 @@
 import { confirmSignup, createSession } from "@/lib/auth";
 import { checkAuthRateLimit, getClientIp } from "@/lib/rateLimit";
-import { isSameOrigin } from "@/lib/security";
+import {
+  TERMS_REQUIRED_ERROR,
+  getTermsAcceptance,
+  isSameOrigin,
+} from "@/lib/security";
 
 // Step 2 of registration: check the 6-digit code emailed by /api/auth/register.
 // The right code creates the account and logs the visitor in. Responses with
@@ -15,6 +19,14 @@ export async function POST(req: Request) {
       { error: "Cross-origin requests are not allowed." },
       { status: 403 },
     );
+  }
+
+  // Terms gate: acceptance was already required at step 1 (/api/auth/register),
+  // but the account is only created HERE — so re-check, and copy the
+  // acceptance record onto the new user as durable proof.
+  const terms = getTermsAcceptance(req);
+  if (!terms) {
+    return Response.json({ error: TERMS_REQUIRED_ERROR }, { status: 403 });
   }
 
   const verdict = await checkAuthRateLimit(getClientIp(req));
@@ -49,7 +61,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await confirmSignup(email, code.trim());
+    const result = await confirmSignup(email, code.trim(), terms);
     if ("error" in result) {
       return Response.json(
         { error: result.error, expired: result.expired === true },

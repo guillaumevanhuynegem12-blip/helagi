@@ -2,7 +2,11 @@ import Anthropic from "@anthropic-ai/sdk";
 import { searchIcd } from "@/lib/icd";
 import { SYSTEM_PROMPT } from "@/lib/systemPrompt";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
-import { isSameOrigin } from "@/lib/security";
+import {
+  TERMS_REQUIRED_ERROR,
+  getTermsAcceptance,
+  isSameOrigin,
+} from "@/lib/security";
 
 // The Claude call happens ONLY here, on the server. Both the Anthropic key and
 // the WHO ICD credentials are read from server-side env vars and never reach
@@ -69,6 +73,13 @@ export async function POST(req: Request) {
       { error: "Cross-origin requests are not allowed." },
       { status: 403 },
     );
+  }
+
+  // Terms gate: no AI processing of (potentially medical) messages without
+  // the visitor having accepted the Terms of Use. This is the server-side
+  // backstop behind the client gates — it makes the guarantee absolute.
+  if (!getTermsAcceptance(req)) {
+    return Response.json({ error: TERMS_REQUIRED_ERROR }, { status: 403 });
   }
 
   // Per-IP rate limiting (burst + daily) — the main cost shield.

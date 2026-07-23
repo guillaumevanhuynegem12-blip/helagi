@@ -1,7 +1,11 @@
 import { resetPassword, createSession } from "@/lib/auth";
 import { validatePassword } from "@/lib/validation";
 import { checkAuthRateLimit, getClientIp } from "@/lib/rateLimit";
-import { isSameOrigin } from "@/lib/security";
+import {
+  TERMS_REQUIRED_ERROR,
+  getTermsAcceptance,
+  isSameOrigin,
+} from "@/lib/security";
 
 // Completes a password reset: the emailed token proves email ownership, the
 // new password replaces the old one, and the visitor is logged straight in.
@@ -15,6 +19,12 @@ export async function POST(req: Request) {
       { error: "Cross-origin requests are not allowed." },
       { status: 403 },
     );
+  }
+
+  // Terms gate: completing a reset logs the visitor straight in, so it is a
+  // session-creating path like login and must require acceptance too.
+  if (!getTermsAcceptance(req)) {
+    return Response.json({ error: TERMS_REQUIRED_ERROR }, { status: 403 });
   }
 
   const verdict = await checkAuthRateLimit(getClientIp(req));

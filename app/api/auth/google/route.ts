@@ -7,6 +7,7 @@ import {
   getGoogleRedirectUri,
   isGoogleConfigured,
 } from "@/lib/googleAuth";
+import { getTermsAcceptance } from "@/lib/security";
 
 // Step 1 of "Sign in with Google": remember a random state token in a
 // short-lived cookie, then send the visitor to Google's consent screen.
@@ -18,6 +19,12 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   if (!isGoogleConfigured()) {
     return Response.redirect(new URL("/login?error=google", getBaseUrl(req)), 302);
+  }
+
+  // Terms gate: this is a top-level navigation, so redirect back to the login
+  // page (which shows the message and the consent banner) instead of JSON.
+  if (!getTermsAcceptance(req)) {
+    return Response.redirect(new URL("/login?error=terms", getBaseUrl(req)), 302);
   }
 
   const state = randomBytes(16).toString("hex");

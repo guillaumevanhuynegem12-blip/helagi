@@ -89,6 +89,20 @@ deploy like that).
   three categories (strictly necessary, analytics, performance & preferences).
   The choice is stored in the `helagi_consent` cookie for 6 months; the footer's
   **Cookie settings** link reopens the modal to change or withdraw consent.
+- **The banner is also the Terms of Use gate.** Every banner/modal decision
+  (regardless of the cookie choice — no consent bundling) records acceptance
+  of the current `TERMS_VERSION` ([lib/consent.ts](lib/consent.ts)) in the
+  consent cookie. Nobody can use the product without accepting:
+  - Client gates: guest button, login/register forms, Google button,
+    reset-password form, and sending a chat message all call
+    `requireTermsAcceptance()`, which opens the consent modal and only
+    proceeds after a decision.
+  - Server backstop: `/api/chat`, `/api/summary`, and every session-creating
+    auth route re-check the cookie via `getTermsAcceptance()`
+    ([lib/security.ts](lib/security.ts)) and refuse with 403 otherwise.
+  - Durable proof: accounts created after the gate store
+    `termsAcceptedAt`/`termsVersion` on the user record.
+  - Bump `TERMS_VERSION` after material legal changes — everyone is re-asked.
 - Analytics ([lib/analytics.ts](lib/analytics.ts) → [app/api/analytics/route.ts](app/api/analytics/route.ts))
   is first-party only and **double-gated**: the client checks consent before
   sending, and the server re-checks the consent cookie before storing.
